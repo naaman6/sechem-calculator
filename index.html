@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מחשבון סכם סופי משוער · קוגניטיבי + מו"ר</title>
+<meta name="description" content="מחשבון סכם סופי משוער: המרת ציון מו&quot;ר/מרק&quot;ם לסקאלת הפסיכומטרי ושקלול 70/30 עם הסכם הקוגניטיבי.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f5c55'/%3E%3Cpath d='M9 22V10m7 12V14m7 8V7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --surface-2:#f0ede6; --border:#dcd7cc;
+  --text:#1d1f1e; --muted:#5e625f; --faint:#8a8d89;
+  --accent:#0f5c55; --accent-soft:#e2efec; --warn:#8a4b0f; --warn-soft:#f7ecdf;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 24px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#131514; --surface:#1b1e1d; --surface-2:#232725; --border:#333936;
+    --text:#ecefed; --muted:#a5aba7; --faint:#7c827e;
+    --accent:#5fc2b5; --accent-soft:#1d3531; --warn:#e3a867; --warn-soft:#352a1e;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Heebo,system-ui,sans-serif;font-size:16px;line-height:1.6}
+.wrap{max-width:880px;margin:0 auto;padding:32px 20px 64px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header svg{flex:none;color:var(--accent)}
+h1{font-size:clamp(1.45rem,1.1rem + 1.4vw,2rem);line-height:1.2;margin:0;font-weight:800;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:6px 0 28px;max-width:62ch}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card h2{font-size:1.05rem;margin:0 0 14px;font-weight:700}
+label{display:block;font-weight:500;margin-bottom:6px}
+.hint{display:block;color:var(--faint);font-size:.85rem;font-weight:400}
+.field{margin-bottom:18px}
+input[type=number]{width:100%;font:inherit;font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);direction:ltr;text-align:right}
+input[type=number]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+input.bad{outline:2px solid var(--warn)}
+.err{color:var(--warn);font-size:.85rem;min-height:1.2em;margin-top:4px}
+details{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+summary{cursor:pointer;color:var(--accent);font-weight:500}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.mini input{font-size:1.05rem;padding:8px 10px}
+button{font:inherit;font-weight:500;margin-top:10px;padding:8px 14px;border-radius:9px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+button:hover{background:var(--accent-soft)}
+.result-main{background:var(--accent-soft);border-radius:12px;padding:18px;margin-bottom:14px}
+.result-main .k{color:var(--muted);font-size:.9rem}
+.result-main .v{font-size:clamp(2.2rem,1.6rem + 2.5vw,3rem);font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1.1}
+.rows{display:grid;gap:0}
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:0}
+.row .k{color:var(--muted)}
+.row .v{font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+.formula{direction:ltr;text-align:left;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--surface-2);border-radius:8px;padding:10px 12px;margin-top:12px;color:var(--muted);overflow-x:auto;white-space:nowrap}
+section.explain{margin-top:22px}
+section.explain h2{font-size:1.1rem;margin:0 0 10px}
+section.explain p, section.explain li{color:var(--muted);max-width:70ch}
+section.explain strong{color:var(--text)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;margin:10px 0}
+th,td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right}
+th{font-weight:500;color:var(--faint);font-size:.88rem}
+.note{background:var(--warn-soft);color:var(--text);border-radius:10px;padding:12px 14px;font-size:.92rem;margin-top:14px}
+a{color:var(--accent)}
+footer{margin-top:28px;color:var(--faint);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-label="לוגו מחשבון סכם" role="img">
+      <rect x="1.5" y="1.5" width="37" height="37" rx="9" stroke="currentColor" stroke-width="3"/>
+      <path d="M12 28V17M20 28V12M28 28V21" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    </svg>
+    <h1>מחשבון סכם סופי משוער</h1>
+  </header>
+  <p class="lede">מזינים סכם קוגניטיבי וציון מו"ר / מרק"ם / מר"ב. המחשבון ממיר את ציון המו"ר לסקאלת הפסיכומטרי (לפי מיקום יחסי), ואז משקלל 70% קוגניטיבי ו-30% לא-קוגניטיבי.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>הנתונים שלך</h2>
+      <div class="field">
+        <label for="cog">סכם קוגניטיבי <span class="hint">סקאלת 200–800</span></label>
+        <input id="cog" type="number" inputmode="decimal" step="0.0001" min="200" max="800" value="756.7958">
+        <div class="err" id="cogErr"></div>
+      </div>
+      <div class="field">
+        <label for="mor">ציון מו"ר / מרק"ם / מר"ב <span class="hint">סקאלת 150–250</span></label>
+        <input id="mor" type="number" inputmode="decimal" step="1" min="150" max="250" value="211">
+        <div class="err" id="morErr"></div>
+      </div>
+      <details>
+        <summary>אין לך סכם קוגניטיבי? חשב מבגרות ופסיכומטרי</summary>
+        <div class="mini">
+          <div><label for="bag">ממוצע בגרות</label><input id="bag" type="number" step="0.01" min="0" max="120" placeholder="112.6"></div>
+          <div><label for="psy">פסיכומטרי</label><input id="psy" type="number" step="1" min="200" max="800" placeholder="763"></div>
+        </div>
+        <button type="button" id="useCog">חשב והכנס</button>
+        <div class="formula">cognitive = (6.666 × bagrut + psychometric) / 2</div>
+      </details>
+    </div>
+
+    <div class="card" aria-live="polite">
+      <h2>התוצאה</h2>
+      <div class="result-main">
+        <div class="k">סכם סופי משוער (מו"ר מומר)</div>
+        <div class="v" id="final">—</div>
+      </div>
+      <div class="rows">
+        <div class="row"><span class="k">מו"ר בסקאלת פסיכומטרי</span><span class="v" id="eq">—</span></div>
+        <div class="row"><span class="k">אחוזון המו"ר (נבחני יולי 2025)</span><span class="v" id="pct">—</span></div>
+        <div class="row"><span class="k">70% מהקוגניטיבי</span><span class="v" id="p70">—</span></div>
+        <div class="row"><span class="k">30% מהמו"ר המומר</span><span class="v" id="p30">—</span></div>
+        <div class="row"><span class="k">להשוואה: מו"ר גולמי, ללא המרה</span><span class="v" id="raw">—</span></div>
+      </div>
+      <div class="formula">final = 0.70 × cognitive + 0.30 × [536 + 6.2 × (mor − 200)]</div>
+    </div>
+  </div>
+
+  <section class="card explain">
+    <h2>למה ככה ממירים</h2>
+    <p>אי אפשר פשוט להכפיל את המו"ר ב-3.2: אז ציון ממוצע (200) הופך ל-640, ציון שגבוה מכ-80% מנבחני הפסיכומטרי. במקום זה בודקים <strong>כמה הציון בולט מעל הממוצע</strong> במבחן שלו, ומתרגמים לאותו מיקום יחסי בפסיכומטרי.</p>
+    <ul>
+      <li><strong>מו"ר:</strong> ממוצע 200, סטיית תקן 20, טווח 150–250 (מאל"ו).</li>
+      <li><strong>פסיכומטרי:</strong> חציון כ-536 וסטיית תקן כ-125, מחושבים מטבלת האחוזונים של מאל"ו.</li>
+      <li><strong>הכופל 6.2</strong> הוא היחס בין סטיות התקן: 125 ÷ 20.</li>
+    </ul>
+    <table>
+      <thead><tr><th>מו"ר</th><th>אחוזון</th><th>נוסחה לינארית</th><th>הצלבת אחוזונים</th></tr></thead>
+      <tbody>
+        <tr><td>190</td><td>29</td><td>474</td><td>~461</td></tr>
+        <tr><td>200</td><td>46</td><td>536</td><td>~521</td></tr>
+        <tr><td>211</td><td>68</td><td>604</td><td>~600</td></tr>
+        <tr><td>220</td><td>84</td><td>660</td><td>~654</td></tr>
+        <tr><td>230</td><td>96</td><td>722</td><td>~717</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><strong>חשוב:</strong> זהו אומדן להמחשה ולא נוסחה רשמית של מוסד כלשהו. בנוסחה הרשמית של אריאל, למשל, המו"ר נכנס כציון גולמי ללא המרה (השורה "להשוואה" בתוצאה). טבלאות האחוזונים מתקופות שונות, ונבחני המו"ר הם קבוצה חזקה מכלל נבחני הפסיכומטרי, כך שההמרה מקורבת.</div>
+  </section>
+
+  <footer>
+    מקורות: <a href="https://www.nite.org.il/wp-content/uploads/2024/08/med-scores.pdf" target="_blank" rel="noopener">מאל"ו – חישוב הציונים במו"ר/מרק"ם/מר"ב</a> ·
+    <a href="https://www.nite.org.il/wp-content/uploads/2020/09/psychometric-test-score-calculation_acc.pdf" target="_blank" rel="noopener">מאל"ו – חישוב ציוני הפסיכומטרי</a> ·
+    <a href="https://www.ariel.ac.il/wp/med/admission-6years/" target="_blank" rel="noopener">אריאל – תנאי קבלה לרפואה</a>
+  </footer>
+</div>
+<script>
+// NITE July 2025 mor distribution: lower bound -> % below
+const MOR_X=[150,170,175,180,185,190,195,200,205,210,215,220,225,230,235,250];
+const MOR_P=[0,7,11,16,22,29,37,46,57,66,76,84,91,96,99,100];
+const interp=(x,xs,ys)=>{if(x<=xs[0])return ys[0];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}return ys[ys.length-1];};
+const $=id=>document.getElementById(id);
+const f2=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calc(){
+  const c=parseFloat($('cog').value), m=parseFloat($('mor').value);
+  const cOk=!isNaN(c)&&c>=200&&c<=800, mOk=!isNaN(m)&&m>=150&&m<=250;
+  $('cog').classList.toggle('bad',!cOk&&$('cog').value!=='');
+  $('mor').classList.toggle('bad',!mOk&&$('mor').value!=='');
+  $('cogErr').textContent=cOk||$('cog').value===''?'':'הזן ערך בין 200 ל-800';
+  $('morErr').textContent=mOk||$('mor').value===''?'':'הזן ערך בין 150 ל-250';
+  const ids=['final','eq','pct','p70','p30','raw'];
+  if(!cOk||!mOk){ids.forEach(i=>$(i).textContent='—');return;}
+  const eq=Math.min(800,Math.max(200,536+6.2*(m-200)));
+  const fin=0.7*c+0.3*eq;
+  $('final').textContent=f2(fin);
+  $('eq').textContent=f2(eq);
+  $('pct').textContent='~'+Math.round(interp(m,MOR_X,MOR_P));
+  $('p70').textContent=f2(0.7*c);
+  $('p30').textContent=f2(0.3*eq);
+  $('raw').textContent=f2(0.7*c+0.3*m);
+}
+$('cog').addEventListener('input',calc);
+$('mor').addEventListener('input',calc);
+$('useCog').addEventListener('click',()=>{
+  const b=parseFloat($('bag').value), p=parseFloat($('psy').value);
+  if(isNaN(b)||isNaN(p))return;
+  $('cog').value=((6.666*b+p)/2).toFixed(4); calc();
+});
+calc();
+</script>
+</body>
+</html>
