@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מחשבון סכם סופי משוער (לא רשמי) · קוגניטיבי + מו"ר</title>
-<meta name="description" content="מחשבון סכם סופי משוער: סימולטור לא רשמי: המרת ציון מו&quot;ר/מרק&quot;ם לסקאלת הפסיכומטרי ושקלול 70/30 עם הסכם הקוגניטיבי.">
+<meta name="description" content="מחשבון סכם סופי משוער, לא רשמי: שקלול 70/30 של סכם קוגניטיבי ומו&quot;ר/מרק&quot;ם בשלושה תרחישי המרה, כולל המרה פנימית.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f5c55'/%3E%3Cpath d='M9 22V10m7 12V14m7 8V7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,7 +82,7 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     </svg>
     <h1>מחשבון סכם סופי משוער</h1>
   </header>
-  <p class="lede">סימולטור לא רשמי. מזינים סכם קוגניטיבי וציון מו"ר / מרק"ם כללי. המחשבון ממיר את ציון המו"ר לסקאלת הפסיכומטרי לפי מיקום יחסי (אחוזון), ואז משקלל 70% קוגניטיבי ו-30% לא-קוגניטיבי, כמו המשקלות שאריאל מפרסמת. התוצאה איננה ציון התאמה רשמי של מוסד כלשהו.</p>
+  <p class="lede">סימולטור לא רשמי. מזינים סכם קוגניטיבי וציון מו"ר / מרק"ם כללי, והמחשבון משקלל 70% קוגניטיבי ו-30% לא-קוגניטיבי, כמו המשקלות שאריאל מפרסמת. מכיוון שאריאל לא מפרסמת איך מיישרים את שתי הסקאלות, מוצגים שלושה תרחישים: <strong>ג' (המרה פנימית, התרחיש המרכזי)</strong>, ושני גבולות קיצון: א' ו-ב'. התוצאה איננה ציון התאמה רשמי של מוסד כלשהו.</p>
 
   <div class="grid">
     <div class="card">
@@ -97,6 +97,17 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
         <input id="mor" type="number" inputmode="decimal" step="0.01" min="150" max="250" placeholder="לדוגמה 211">
         <div class="err" id="morErr"></div>
         <div class="field-note">החל מ-2026 מאל"ו לא מחשב ציון כללי, אלא מדווח ציון לכל רכיב בנפרד, וכל מוסד משקלל בעצמו. השדה מיועד לציון כללי בסקאלת 150–250 (משנים קודמות, או כזה שמוסד חישב). אין להזין כאן ציון של רכיב בודד.</div>
+      </div>
+      <div class="field">
+        <label for="sd">סטיית תקן של הקוגניטיבי במאגר המועמדים <span class="hint">הנחה לתרחיש ג'. ברירת מחדל 25</span></label>
+        <input id="sd" type="number" inputmode="decimal" step="0.5" min="3" max="150" value="25">
+        <div class="err" id="sdErr"></div>
+      </div>
+      <div class="field">
+        <label for="mu">ממוצע הקוגניטיבי במאגר המועמדים <span class="hint">הנחה לתרחיש ג'. ברירת מחדל 740</span></label>
+        <input id="mu" type="number" inputmode="decimal" step="1" min="200" max="800" value="740">
+        <div class="err" id="muErr"></div>
+        <div class="field-note">הממוצע רק מזיז את כל המועמדים באותו מספר נקודות, ולכן לא משנה את הדירוג. סטיית התקן היא שקובעת את הדירוג. פרטים בהסבר למטה.</div>
       </div>
       <details>
         <summary>אין לך סכם קוגניטיבי? חשב מבגרות ופסיכומטרי (נוסחת אריאל)</summary>
@@ -114,22 +125,56 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <div class="card" aria-live="polite">
       <h2>התוצאה</h2>
       <div class="result-main">
-        <div class="k">תרחיש א': מו"ר מומר לסקאלת פסיכומטרי</div>
-        <div class="v" id="final">—</div>
+        <div class="k">תרחיש ג': המרה פנימית (סקאלה 200/20)</div>
+        <div class="v" id="finalC">—</div>
       </div>
       <div class="rows">
-        <div class="row"><span class="k">אחוזון המו"ר (נבחני יולי 2025)</span><span class="v" id="pct">—</span></div>
-        <div class="row"><span class="k">ציון פסיכומטרי באותו אחוזון</span><span class="v" id="eq">—</span></div>
-        <div class="row"><span class="k">70% מהקוגניטיבי</span><span class="v" id="p70">—</span></div>
-        <div class="row"><span class="k">30% מהמו"ר המומר</span><span class="v" id="p30">—</span></div>
-        <div class="row"><span class="k">תרחיש ב': מו"ר גולמי, ללא המרה</span><span class="v" id="raw">—</span></div>
+        <div class="row"><span class="k">הקוגניטיבי אחרי תקנון</span><span class="v" id="cStd">—</span></div>
+        <div class="row"><span class="k">נקודות קוגניטיבי ששוות נקודת מו"ר אחת</span><span class="v" id="rateC">—</span></div>
       </div>
-      <div class="formula">final = 0.70 × cognitive + 0.30 × psychometric_at(percentile(mor))</div>
+      <div class="formula">C = 0.70 × (200 + 20 × (cognitive − μ) / σ) + 0.30 × mor</div>
+
+      <h2 style="margin-top:20px">גבולות קיצון</h2>
+      <div class="rows">
+        <div class="row"><span class="k">תרחיש א': מו"ר מומר לסקאלת פסיכומטרי</span><span class="v" id="final">—</span></div>
+        <div class="row"><span class="k">· אחוזון המו"ר (נבחני יולי 2025)</span><span class="v" id="pct">—</span></div>
+        <div class="row"><span class="k">· ציון פסיכומטרי באותו אחוזון</span><span class="v" id="eq">—</span></div>
+        <div class="row"><span class="k">· נקודות קוגניטיבי לנקודת מו"ר</span><span class="v" id="rateA">—</span></div>
+        <div class="row"><span class="k">תרחיש ב': מו"ר גולמי, ללא המרה</span><span class="v" id="raw">—</span></div>
+        <div class="row"><span class="k">· נקודות קוגניטיבי לנקודת מו"ר</span><span class="v">0.43</span></div>
+      </div>
+      <div class="formula">A = 0.70 × cognitive + 0.30 × psychometric_at(percentile(mor))<br>B = 0.70 × cognitive + 0.30 × mor</div>
+      <p class="field-note">תרחיש ג' מוצג בסקאלת המו"ר (סביב 200), וא'/ב' בסקאלות אחרות. לכן אין להשוות את המספרים בין התרחישים, רק מועמדים בתוך אותו תרחיש.</p>
     </div>
   </div>
 
   <section class="card explain">
-    <h2>איך ההמרה עובדת</h2>
+    <h2>תרחיש ג': המרה פנימית, ולמה הוא המרכזי</h2>
+    <p>כשמשקללים שני ציונים, מה שקובע את ההשפעה של כל רכיב הוא לא רק האחוז (70/30) אלא <strong>כמה הרכיב מתפזר בין המועמדים שמתחרים זה בזה</strong>. אם רכיב אחד צפוף מאוד, הבדלים בו כמעט לא מזיזים את הדירוג, גם אם המשקל שלו 70%.</p>
+    <p>בהמרה פנימית מתקננים את הקוגניטיבי לפי מאגר המועמדים עצמו לאותה סקאלה של המו"ר (ממוצע 200, סטיית תקן 20). כך סטיית תקן אחת בקוגניטיבי שווה סטיית תקן אחת במו"ר, ו-70/30 הוא באמת 70/30.</p>
+    <ul>
+      <li><strong>למה זה הגיוני:</strong> המוסדות שאפשר לפענח את הנוסחה שלהם עובדים כך. הטכניון ממיר את הסכם לסולם המו"ר לפי התפלגות המועמדים שלו. בתל אביב, לפי הנוסחה שחולצה ממחשבון SECHEMETER, המו"ר מומר לסקאלת הסכם עם כ-0.47 נקודות סכם לנקודת מו"ר, כלומר סטיית תקן משתמעת של כ-9.4 נקודות סכם במאגר.</li>
+      <li><strong>רמז מאריאל עצמה:</strong> בתוכנית הארבע שנתית אריאל מפרסמת ספי קבלה סופיים סביב 200–219 (215.34 בתשפ"ז, 207.52 בתשפ"ו). מכאן שהציון הסופי שם בסקאלת המו"ר, והקוגניטיבי (מבחן ידע פנימי) מומר אליה. זו הסקה, לא נוסחה רשמית.</li>
+      <li><strong>מה ההנחה:</strong> סטיית התקן של הקוגניטיבי במאגר (σ). אריאל לא מפרסמת אותה. המועמדים מסוננים מראש (פסיכומטרי 680 ומעלה), ולכן הפיזור שלהם צר. ברירת המחדל 25 היא הערכה, ואפשר לשנות אותה ולראות את ההשפעה. אם הדירוג נעשה רק בין מי שעבר לשלב ב', הפיזור צר עוד יותר (σ קטן יותר).</li>
+      <li><strong>הממוצע (μ) לא משנה דירוג:</strong> הוא מזיז את כל המועמדים באותו מספר נקודות. הוא משפיע רק על המספר המוחלט, ולכן אין להשוות את תוצאת ג' לספי קבלה שפורסמו.</li>
+    </ul>
+    <h2 style="margin-top:18px">השוואה בין שני מועמדים: נקודת האיזון</h2>
+    <p>נניח שמועמד אחד מוביל בקוגניטיבי ב-Δc נקודות, והשני מוביל במו"ר ב-Δm נקודות. בתרחיש ג' המועמד החזק בקוגניטיבי מוביל כל עוד:</p>
+    <div class="formula">σ &lt; (0.7 × Δc × 20) / (0.3 × Δm)</div>
+    <p>דוגמה: 749/211 מול 734/224 (Δc = 15, Δm = 13). נקודת האיזון היא σ ≈ 53.8. בכל σ מתחת לכך, ובוודאי בטווח הסביר של 10–40, בעל 749 מוביל. תרחיש א' מתנהג כאילו σ ≈ 110 (פיזור של כלל נבחני הפסיכומטרי), ולכן שם בעלת 224 מובילה. תרחיש ב' מתנהג כאילו σ = 20.</p>
+    <table>
+      <thead><tr><th>תרחיש</th><th>σ משתמע</th><th>נקודות קוגניטיבי לנקודת מו"ר</th><th>הטיה</th></tr></thead>
+      <tbody>
+        <tr><td>א': המרה לכלל נבחני הפסיכומטרי</td><td>כ-110</td><td>כ-2.35 (משתנה לפי הציון)</td><td>לטובת המו"ר</td></tr>
+        <tr><td>ג': המרה פנימית, σ = 25</td><td>25</td><td>1.25</td><td>מאוזן, לפי ההנחה</td></tr>
+        <tr><td>ב': גולמי</td><td>20</td><td>0.43</td><td>לטובת הקוגניטיבי</td></tr>
+      </tbody>
+    </table>
+    <p class="field-note">בתרחיש ג', נקודות קוגניטיבי לנקודת מו"ר = (0.3 / 0.7) × (σ / 20).</p>
+  </section>
+
+  <section class="card explain">
+    <h2>תרחיש א': איך ההמרה לסקאלת הפסיכומטרי עובדת</h2>
     <p>אי אפשר פשוט להכפיל את המו"ר ב-3.2: אז ציון ממוצע (200) הופך ל-640, ציון שגבוה מכ-79% מנבחני הפסיכומטרי. במקום זה בודקים <strong>באיזה אחוזון הציון נמצא</strong> בין נבחני המו"ר, ומחפשים את הציון בפסיכומטרי שנמצא באותו אחוזון (השוואת אחוזונים, equipercentile).</p>
     <ul>
       <li><strong>אחוזון המו"ר:</strong> מטבלת ההתפלגות של נבחני יולי 2025 במסמך מאל"ו. הסקאלה: ממוצע 200, סטיית תקן 20, טווח 150–250.</li>
@@ -149,8 +194,10 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     </table>
     <div class="note"><strong>מגבלות חשובות:</strong>
       <ul>
-        <li>אריאל מפרסמת רק שהסכם הסופי הוא 70% ציון קבלה משולב ו-30% "שקלול של מבדקי האישיות" (הערכה של בית הספר לרפואה באריאל או ציון מו"ר/מרק"ם). היא לא מפרסמת אם ואיך ציון המו"ר מומר לפני השקלול, ולכן מוצגים שני תרחישים. אף אחד מהם אינו שיטה מאומתת.</li>
-        <li>אחוזון המו"ר נמדד בין מועמדים לרפואה, ואחוזון הפסיכומטרי בין כלל הנבחנים. אצל מועמדים לרפואה הציונים הקוגניטיביים צפופים מאוד, ולכן בתרחיש א' רכיב המו"ר משפיע על ההבדלים בין מועמדים הרבה יותר מ-30%.</li>
+        <li>אריאל מפרסמת רק שהסכם הסופי הוא 70% ציון קבלה משולב ו-30% "שקלול של מבדקי האישיות" (הערכה של בית הספר לרפואה באריאל או ציון מו"ר/מרק"ם). היא לא מפרסמת אם ואיך הציונים מיושרים לפני השקלול, ולכן מוצגים שלושה תרחישים. אף אחד מהם אינו שיטה מאומתת.</li>
+        <li>אחוזון המו"ר נמדד בין מועמדים לרפואה, ואחוזון הפסיכומטרי בין כלל הנבחנים. אצל מועמדים לרפואה הציונים הקוגניטיביים צפופים מאוד, ולכן בתרחיש א' רכיב המו"ר משפיע על ההבדלים בין מועמדים הרבה יותר מ-30%. זו הסיבה שתרחיש א' מוצג כגבול קיצון ולא כתרחיש המרכזי.</li>
+        <li>תרחיש ג' תלוי בהנחה על σ. הוא לא מדויק יותר מההנחה שמזינים, אבל הוא הופך את ההנחה לגלויה ומאפשר לבדוק כמה התוצאה רגישה לה.</li>
+        <li>מאל"ו לא מחשב מ-2026 ציון מו"ר כללי. אם אריאל משקללת את הרכיבים (ביוגרפי, מרכז הערכה, שאו"ל) בדרך משלה, הפיזור של הציון הלא-קוגניטיבי עשוי להיות שונה מסטיית תקן 20.</li>
         <li>לשם השוואה, הטכניון מפרסם לתשפ"ז נוסחה הפוכה: הוא ממיר את הסכם לסולם המו"ר, לפי התפלגות המועמדים שלו באותה שנה, ומשקלל 70% מו"ר ו-30% סכם. משקלות ושיטות השקלול שונים בין המוסדות.</li>
         <li>הטבלאות מתקופות שונות (מו"ר: יולי 2025; פסיכומטרי: "השנים האחרונות"), ומעל אחוזון 99 כל ערך הוא הערכה גסה.</li>
       </ul>
@@ -162,7 +209,9 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <a href="https://www.nite.org.il/other-tests/mor-mirkam/" target="_blank" rel="noopener">מאל"ו – מו"ר ומרק"ם (שינוי 2026)</a> ·
     <a href="https://www.nite.org.il/wp-content/uploads/2026/08/psychometric_summer_2026.pdf" target="_blank" rel="noopener">מאל"ו – חוברת פסיכומטרי קיץ 2026 (טבלת אחוזים)</a> ·
     <a href="https://www.nite.org.il/wp-content/uploads/2025/05/graphs-2024.pdf" target="_blank" rel="noopener">מאל"ו – נתונים סטטיסטיים 2024</a> ·
-    <a href="https://www.ariel.ac.il/wp/med/admission-6years/" target="_blank" rel="noopener">אריאל – תנאי קבלה לרפואה (6 שנים)</a> ·
+    <a href="https://campuscore.ariel.ac.il/wp/med/admission-6years/" target="_blank" rel="noopener">אריאל – תנאי קבלה לרפואה (6 שנים)</a> ·
+    <a href="https://campuscore.ariel.ac.il/wp/med/%d7%a1%d7%a3-%d7%a7%d7%91%d7%9c%d7%94/" target="_blank" rel="noopener">אריאל – ספי קבלה (4 שנים)</a> ·
+    <a href="https://duvmanr.github.io/sechemeter/" target="_blank" rel="noopener">SECHEMETER (לא רשמי, מקור הנוסחה של תל אביב)</a> ·
     <a href="https://admissions.technion.ac.il/2026/09/07/mor-calculation-for-2026/" target="_blank" rel="noopener">הטכניון – חישוב מו"ר משוקלל תשפ"ז</a>
     <br>עודכן: ספטמבר 2026. בדקו תמיד מול המוסד שאליו אתם מגישים.
   </footer>
@@ -182,22 +231,31 @@ const f2=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDig
 function calc(){
   const cv=$('cog').value, mv=$('mor').value;
   const c=parseFloat(cv), m=parseFloat(mv);
+  const sd=parseFloat($('sd').value), mu=parseFloat($('mu').value);
+  const sdOk=!isNaN(sd)&&sd>=3&&sd<=150, muOk=!isNaN(mu)&&mu>=200&&mu<=800;
+  $('sd').classList.toggle('bad',!sdOk); $('mu').classList.toggle('bad',!muOk);
+  $('sdErr').textContent=sdOk?'':'הזן ערך בין 3 ל-150';
+  $('muErr').textContent=muOk?'':'הזן ערך בין 200 ל-800';
+  $('rateC').textContent=sdOk?f2((0.3/0.7)*(sd/20)):'—';
   const cOk=!isNaN(c)&&c>=200&&c<=800, mOk=!isNaN(m)&&m>=150&&m<=250;
   $('cog').classList.toggle('bad',!cOk&&cv!=='');
   $('mor').classList.toggle('bad',!mOk&&mv!=='');
   $('cogErr').textContent=cOk||cv===''?'':'הזן ערך בין 200 ל-800';
   $('morErr').textContent=mOk||mv===''?'':'הזן ערך בין 150 ל-250';
-  if(mOk){const p=morPct(m);$('pct').textContent=p>=99?'99+':'~'+Math.round(p);$('eq').textContent=f2(morToPsy(m));}
+  if(mOk){const p=morPct(m);$('pct').textContent=p>=99?'99+':Math.round(p);$('eq').textContent=f2(morToPsy(m));}
   else{$('pct').textContent='—';$('eq').textContent='—';}
-  if(!cOk||!mOk){['final','p70','p30','raw'].forEach(i=>$(i).textContent='—');return;}
+  if(mOk){const d=0.5,s=(morToPsy(Math.min(250,m+d))-morToPsy(Math.max(150,m-d)))/(Math.min(250,m+d)-Math.max(150,m-d));$('rateA').textContent=f2(0.3*s/0.7);}else $('rateA').textContent='—';
+  if(!cOk||!mOk){['final','raw','finalC','cStd'].forEach(i=>$(i).textContent='—');return;}
   const eq=morToPsy(m);
   $('final').textContent=f2(0.7*c+0.3*eq);
-  $('p70').textContent=f2(0.7*c);
-  $('p30').textContent=f2(0.3*eq);
   $('raw').textContent=f2(0.7*c+0.3*m);
+  if(sdOk&&muOk){const z=200+20*(c-mu)/sd;$('cStd').textContent=f2(z);$('finalC').textContent=f2(0.7*z+0.3*m);}
+  else{$('cStd').textContent='—';$('finalC').textContent='—';}
 }
 $('cog').addEventListener('input',calc);
 $('mor').addEventListener('input',calc);
+$('sd').addEventListener('input',calc);
+$('mu').addEventListener('input',calc);
 $('useCog').addEventListener('click',()=>{
   const b=parseFloat($('bag').value), p=parseFloat($('psy').value);
   if(isNaN(b)||isNaN(p)||b<0||b>130||p<200||p>800){$('helperErr').textContent='הזן ממוצע בגרות (0–130) ופסיכומטרי (200–800)';return;}
