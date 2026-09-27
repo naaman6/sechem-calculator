@@ -71,6 +71,30 @@ th{font-weight:500;color:var(--faint);font-size:.88rem}
 .note{background:var(--warn-soft);color:var(--text);border-radius:10px;padding:12px 14px;font-size:.92rem;margin-top:14px}
 a{color:var(--accent)}
 footer{margin-top:28px;color:var(--faint);font-size:.85rem}
+.badge{display:inline-block;font-size:.75rem;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent);color:#fff;vertical-align:middle;margin-inline-start:6px}
+.badge.warn{background:var(--warn)}
+.badge.muted{background:var(--faint)}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.sc{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface-2)}
+.sc .t{font-size:.85rem;color:var(--muted);font-weight:500}
+.sc .n{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;direction:ltr;text-align:right;line-height:1.2;margin:4px 0}
+.sc .s{font-size:.8rem;color:var(--faint)}
+.methods{margin-top:22px}
+.methods>h2{font-size:1.15rem;margin:0 0 4px}
+.methods>p{color:var(--muted);margin:0 0 14px}
+.m-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (max-width:720px){.m-grid{grid-template-columns:1fr}}
+.m{background:var(--surface);border:1px solid var(--border);border-top:5px solid var(--faint);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.m.primary{border-top-color:var(--accent);background:linear-gradient(var(--accent-soft),var(--surface) 70%)}
+.m.a{border-top-color:var(--warn)}
+.m.b{border-top-color:#6b7f99}
+.m.four{border-top-color:var(--accent)}
+.m h3{margin:0 0 6px;font-size:1.05rem;line-height:1.35}
+.m .one{font-weight:500;margin:0 0 8px}
+.m dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:8px 0 0;font-size:.9rem}
+.m dt{color:var(--faint);white-space:nowrap}
+.m dd{margin:0;color:var(--text)}
+.m .formula{margin-top:10px;white-space:normal}
 </style>
 </head>
 <body>
@@ -125,7 +149,7 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <div class="card" aria-live="polite">
       <h2>התוצאה</h2>
       <div class="result-main">
-        <div class="k">תרחיש ג': המרה פנימית (סקאלה 200/20)</div>
+        <div class="k">תרחיש ג': המרה פנימית (סקאלה 200/20) <span class="badge">מרכזי</span></div>
         <div class="v" id="finalC">—</div>
       </div>
       <div class="rows">
@@ -135,18 +159,63 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
       <div class="formula">C = 0.70 × (200 + 20 × (cognitive − μ) / σ) + 0.30 × mor</div>
 
       <h2 style="margin-top:20px">גבולות קיצון</h2>
-      <div class="rows">
-        <div class="row"><span class="k">תרחיש א': מו"ר מומר לסקאלת פסיכומטרי</span><span class="v" id="final">—</span></div>
-        <div class="row"><span class="k">· אחוזון המו"ר (נבחני יולי 2025)</span><span class="v" id="pct">—</span></div>
-        <div class="row"><span class="k">· ציון פסיכומטרי באותו אחוזון</span><span class="v" id="eq">—</span></div>
-        <div class="row"><span class="k">· נקודות קוגניטיבי לנקודת מו"ר</span><span class="v" id="rateA">—</span></div>
-        <div class="row"><span class="k">תרחיש ב': מו"ר גולמי, ללא המרה</span><span class="v" id="raw">—</span></div>
-        <div class="row"><span class="k">· נקודות קוגניטיבי לנקודת מו"ר</span><span class="v">0.43</span></div>
+      <div class="sc-grid">
+        <div class="sc"><div class="t">א': המרה לכלל הנבחנים <span class="badge warn">מטה למו"ר</span></div><div class="n" id="final">—</div><div class="s">נקודת מו"ר = <span id="rateA">—</span> נק' קוגניטיבי</div></div>
+        <div class="sc"><div class="t">ב': גולמי <span class="badge muted">מטה לקוגניטיבי</span></div><div class="n" id="raw">—</div><div class="s">נקודת מו"ר = 0.43 נק' קוגניטיבי</div></div>
       </div>
-      <div class="formula">A = 0.70 × cognitive + 0.30 × psychometric_at(percentile(mor))<br>B = 0.70 × cognitive + 0.30 × mor</div>
+      <div class="rows" style="margin-top:8px">
+        <div class="row"><span class="k">א': אחוזון המו"ר (נבחני יולי 2025)</span><span class="v" id="pct">—</span></div>
+        <div class="row"><span class="k">א': ציון פסיכומטרי באותו אחוזון</span><span class="v" id="eq">—</span></div>
+      </div>
       <p class="field-note">תרחיש ג' מוצג בסקאלת המו"ר (סביב 200), וא'/ב' בסקאלות אחרות. לכן אין להשוות את המספרים בין התרחישים, רק מועמדים בתוך אותו תרחיש.</p>
     </div>
   </div>
+
+  <section class="methods" aria-labelledby="mh">
+    <h2 id="mh">השיטות במבט מהיר</h2>
+    <p>כל השיטות משקללות 70/30. ההבדל היחיד: <strong>לפי איזו אוכלוסייה מיישרים את הקוגניטיבי והמו"ר</strong>. זה מה שקובע כמה שווה נקודת מו"ר.</p>
+    <div class="m-grid">
+      <article class="m primary">
+        <h3>ג' · המרה פנימית <span class="badge">מרכזי</span></h3>
+        <p class="one">הקוגניטיבי מתוקנן לפי מאגר המועמדים לסקאלה 200/20, כמו המו"ר.</p>
+        <dl>
+          <dt>נקודת מו"ר שווה</dt><dd>0.54 נק' קוגניטיבי (ב-σ = 25)</dd>
+          <dt>מי עושה ככה</dt><dd>הטכניון (רשמי), תל אביב (משוער), אריאל ארבע שנתי (משוער)</dd>
+          <dt>חולשה</dt><dd>תלוי בהנחה על σ</dd>
+        </dl>
+      </article>
+      <article class="m four">
+        <h3>אריאל ארבע שנתי · כך זה עובד שם <span class="badge">חיזוק לג'</span></h3>
+        <p class="one">כל הרכיבים כבר מתוקננים לסטיית תקן 20, ומשקללים ממוצע פשוט.</p>
+        <dl>
+          <dt>מבחן ידע</dt><dd>מתוקנן לכל מועד מול כל הנבחנים: ממוצע 300, סטיית תקן 20 (250–350). אריאל מפחיתה כ-105: ידע 325 ≈ 221</dd>
+          <dt>לא-קוגניטיבי</dt><dd>ביוגרפי ומרכז הערכה: ממוצע 200, סטיית תקן 20 (150–250)</dd>
+          <dt>ציון סופי</dt><dd>סביב 200. סף תשפ"ז: 215.34</dd>
+          <dt>אמינות</dt><dd>סקאלת הלא-קוגניטיבי והספים: רשמי. תקנון הידע וההפחתה: מקור משני (BMMIL)</dd>
+        </dl>
+        <div class="formula">final ≈ w₁ × (knowledge − 105) + w₂ × non_cognitive</div>
+      </article>
+      <article class="m a">
+        <h3>א' · המרה לכלל נבחני הפסיכומטרי <span class="badge warn">גבול קיצון</span></h3>
+        <p class="one">המו"ר מומר לפסיכומטרי לפי אחוזון בכלל הנבחנים.</p>
+        <dl>
+          <dt>נקודת מו"ר שווה</dt><dd>כ-2.35 נק' קוגניטיבי (משתנה לפי הציון)</dd>
+          <dt>σ משתמע</dt><dd>כ-110, פיזור של כלל הנבחנים, לא של מועמדים לרפואה</dd>
+          <dt>הטיה</dt><dd>מגדיל מאוד את משקל המו"ר בפועל</dd>
+          <dt>הערה</dt><dd>המרה הפוכה, קוגניטיבי למו"ר לפי אותן טבלאות, נותנת אותה מסקנה</dd>
+        </dl>
+      </article>
+      <article class="m b">
+        <h3>ב' · גולמי, בלי המרה <span class="badge muted">גבול קיצון</span></h3>
+        <p class="one">0.7 × קוגניטיבי + 0.3 × מו"ר, כמו שהם.</p>
+        <dl>
+          <dt>נקודת מו"ר שווה</dt><dd>0.43 נק' קוגניטיבי</dd>
+          <dt>σ משתמע</dt><dd>20, כאילו הקוגניטיבי מתפזר כמו המו"ר</dd>
+          <dt>הטיה</dt><dd>מקטין את משקל המו"ר בפועל</dd>
+        </dl>
+      </article>
+    </div>
+  </section>
 
   <section class="card explain">
     <h2>תרחיש ג': המרה פנימית, ולמה הוא המרכזי</h2>
@@ -154,8 +223,9 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <p>בהמרה פנימית מתקננים את הקוגניטיבי לפי מאגר המועמדים עצמו לאותה סקאלה של המו"ר (ממוצע 200, סטיית תקן 20). כך סטיית תקן אחת בקוגניטיבי שווה סטיית תקן אחת במו"ר, ו-70/30 הוא באמת 70/30.</p>
     <ul>
       <li><strong>למה זה הגיוני:</strong> המוסדות שאפשר לפענח את הנוסחה שלהם עובדים כך. הטכניון ממיר את הסכם לסולם המו"ר לפי התפלגות המועמדים שלו. בתל אביב, לפי הנוסחה שחולצה ממחשבון SECHEMETER, המו"ר מומר לסקאלת הסכם עם כ-0.47 נקודות סכם לנקודת מו"ר, כלומר סטיית תקן משתמעת של כ-9.4 נקודות סכם במאגר.</li>
-      <li><strong>רמז מאריאל עצמה:</strong> בתוכנית הארבע שנתית אריאל מפרסמת ספי קבלה סופיים סביב 200–219 (215.34 בתשפ"ז, 207.52 בתשפ"ו). מכאן שהציון הסופי שם בסקאלת המו"ר, והקוגניטיבי (מבחן ידע פנימי) מומר אליה. זו הסקה, לא נוסחה רשמית.</li>
-      <li><strong>מה ההנחה:</strong> סטיית התקן של הקוגניטיבי במאגר (σ). אריאל לא מפרסמת אותה. המועמדים מסוננים מראש (פסיכומטרי 680 ומעלה), ולכן הפיזור שלהם צר. ברירת המחדל 25 היא הערכה, ואפשר לשנות אותה ולראות את ההשפעה. אם הדירוג נעשה רק בין מי שעבר לשלב ב', הפיזור צר עוד יותר (σ קטן יותר).</li>
+      <li><strong>רמז מאריאל עצמה, בארבע שנתי:</strong> אריאל מפרסמת ספי קבלה סופיים סביב 200–219 (215.34 בתשפ"ז, 207.52 בתשפ"ו), כלומר הציון הסופי בסקאלת המו"ר. לפי BMMIL (מקור משני, לא רשמי), מבחן הידע מתוקנן לכל מועד מול כל הנבחנים לממוצע 300 וסטיית תקן 20, ואריאל מפחיתה כ-105 נקודות כדי להביא אותו לסביבת 200. לפי מאל"ו, גם הציון הלא-קוגניטיבי בסקאלה של ממוצע 200 וסטיית תקן 20. כך לכל הרכיבים אותו פיזור, והמשקלים הם המשקלים בפועל. זה בדיוק מה שתרחיש ג' עושה לשש שנתי.</li>
+      <li><strong>איזה σ מתאים:</strong> בארבע שנתי התקנון נעשה מול כל הנבחנים, לא רק מול מי שעבר לשלב ב'. המקביל בשש שנתי הוא כל הנרשמים שעברו את הסף (פסיכומטרי 680 ומעלה). הערכה גסה לפיזור שלהם: σ בין 24 ל-33, לפי הנחות על פיזור הבגרות והפסיכומטרי והקשר ביניהם.</li>
+      <li><strong>מה ההנחה:</strong> סטיית התקן של הקוגניטיבי במאגר (σ). אריאל לא מפרסמת אותה. ברירת המחדל 25 היא הערכה, ואפשר לשנות אותה ולראות את ההשפעה.</li>
       <li><strong>הממוצע (μ) לא משנה דירוג:</strong> הוא מזיז את כל המועמדים באותו מספר נקודות. הוא משפיע רק על המספר המוחלט, ולכן אין להשוות את תוצאת ג' לספי קבלה שפורסמו.</li>
     </ul>
     <h2 style="margin-top:18px">השוואה בין שני מועמדים: נקודת האיזון</h2>
@@ -211,6 +281,8 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <a href="https://www.nite.org.il/wp-content/uploads/2025/05/graphs-2024.pdf" target="_blank" rel="noopener">מאל"ו – נתונים סטטיסטיים 2024</a> ·
     <a href="https://campuscore.ariel.ac.il/wp/med/admission-6years/" target="_blank" rel="noopener">אריאל – תנאי קבלה לרפואה (6 שנים)</a> ·
     <a href="https://campuscore.ariel.ac.il/wp/med/%d7%a1%d7%a3-%d7%a7%d7%91%d7%9c%d7%94/" target="_blank" rel="noopener">אריאל – ספי קבלה (4 שנים)</a> ·
+    <a href="https://www.nite.org.il/files/medical_school/merav/merav-guide.pdf" target="_blank" rel="noopener">מאל"ו – מדריך מר"ב (סקאלת 200/20)</a> ·
+    <a href="https://bmmil.org/yedatest/" target="_blank" rel="noopener">BMMIL – תקנון מבחן הידע (לא רשמי)</a> ·
     <a href="https://duvmanr.github.io/sechemeter/" target="_blank" rel="noopener">SECHEMETER (לא רשמי, מקור הנוסחה של תל אביב)</a> ·
     <a href="https://admissions.technion.ac.il/2026/09/07/mor-calculation-for-2026/" target="_blank" rel="noopener">הטכניון – חישוב מו"ר משוקלל תשפ"ז</a>
     <br>עודכן: ספטמבר 2026. בדקו תמיד מול המוסד שאליו אתם מגישים.
