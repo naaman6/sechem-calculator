@@ -142,10 +142,22 @@ function readForms_(ss) {
   let historical = 0, invalid = 0;
   const survey = { answered: 0, tracks: { A: 0, B: 0, U: 0, M: 0 },
     historicalRows: [], validRows: 0, identifiedResponses: 0,
-    totalResponses: 0, distributions: { cog: {}, mor: {} } };
+    totalResponses: 0, distributions: { cog: {}, mor: {} }, responseRows: [] };
   values.slice(1).forEach((row, index) => {
     if (row.every(x => x === '')) return;
     survey.totalResponses++;
+    // Original paired answers for the explicitly requested three-column table.
+    // Never send row numbers, timestamps, emails, comments or identity hashes.
+    const publicNumber = value => {
+      const raw = String(value).trim();
+      if (!raw) return null;
+      const number = Number(raw.replace(',', '.'));
+      return Number.isFinite(number) && number >= 0 && number <= 1000 ? number : 'לא תקין';
+    };
+    survey.responseRows.push({
+      t: String(row[pos.track] || '').trim() ? trackCode_(String(row[pos.track])) : null,
+      c: publicNumber(row[pos.cog]), m: publicNumber(row[pos.mor])
+    });
     // Aggregate the original form answers independently of model validity.
     // No free text, email, identifier or per-person linkage enters these counts.
     [['cog', pos.cog], ['mor', pos.mor]].forEach(([key, column]) => {

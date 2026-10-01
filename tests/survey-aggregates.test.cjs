@@ -20,4 +20,15 @@ assert.equal(out.survey.distributions.cog['לא מספרי / מחוץ לטווח
 assert.equal(out.survey.distributions.mor['0'],2);
 assert.equal(out.survey.distributions.mor['200'],1);
 assert(!JSON.stringify(out.survey.distributions).includes('not a score'));
+assert.equal(out.survey.responseRows.length,5);
+assert(out.survey.responseRows.every(r=>Object.keys(r).sort().join(',')==='c,m,t'));
+assert.equal(out.survey.responseRows[0].c,749);
+assert.equal(out.survey.responseRows[0].m,211);
+assert.equal(out.survey.responseRows[0].t,'A');
+assert.equal(out.survey.responseRows[1].m,0);
+assert.equal(out.survey.responseRows[2].c,135);
+assert.equal(out.survey.responseRows[3].t,null);
+assert.equal(out.survey.responseRows[4].c,'לא תקין');
+assert(!JSON.stringify(out.survey.responseRows).includes('not a score'));
 console.log('PASS original form aggregates include invalid scores, omit blanks and never return free text');
+console.log('PASS original rows expose only linked track/cognitive/MOR values, with no timestamps or arbitrary text');

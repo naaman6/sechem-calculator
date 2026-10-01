@@ -31,8 +31,21 @@ const legacy=vm.createContext({document:dom});
 vm.runInContext('const SurveyCharts={legacy:true}; this.before=SurveyCharts;',legacy);
 vm.runInContext(source+'\nthis.after=SurveyCharts;',legacy);
 assert.equal(legacy.before,legacy.after);
-assert.equal(legacy.after.version,'5.3.1');
+assert.equal(legacy.after.version,'5.4.0');
 assert.equal(typeof legacy.after.grouped,'function');
 vm.runInContext(source,legacy);
+const paired=context.chart.tableRows([
+  {t:'B',c:740,m:0,email:'private@example.org',date:'2026-01-01'},
+  {t:'A',c:760,m:211,uid:'private-id'},
+  {t:'U',c:745,m:190},
+  {t:'<img src=x>',c:'private@example.org',m:'2026-01-01'}
+]);
+assert.equal(paired[0].c,760);assert.equal(paired[0].m,211);assert.equal(paired[0].t,'A');
+assert.equal(paired[2].c,740);assert.equal(paired[2].m,0);assert.equal(paired[2].t,'B');
+assert(paired.every(r=>Object.keys(r).sort().join(',')==='c,m,t'));
+assert(!JSON.stringify(paired).includes('private'));
+assert(!JSON.stringify(paired).includes('2026'));
+assert(!JSON.stringify(paired).includes('<img'));
 console.log('PASS bins preserve counts, decimal boundaries, gaps and maximum scores; missing/invalid scores separate; at most 12 equal-width intervals');
 console.log('PASS new module updates an existing v5.2 global const in place, including repeated loads');
+console.log('PASS response table preserves paired values when sorting and projects only safe t/c/m cells');

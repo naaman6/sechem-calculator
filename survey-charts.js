@@ -39,14 +39,40 @@
     const badges=[g.noScore?`<span>${g.noScore} ללא ציון מו״ר</span>`:'',g.invalid?`<span>${g.invalid} ערכים מחוץ לטווח / לא תקינים</span>`:''].join('');
     return `<article class="survey-chart"><h3>${title}</h3><p class="small muted">${g.total} תשובות בטופס · ${g.valid} ציונים תקינים בהתפלגות</p>${badges?`<div class="histogram-excluded">${badges}</div>`:''}${g.valid?`<div class="histogram-head" aria-hidden="true"><span>טווח ציון</span><span>מספר תשובות</span></div><ul class="histogram" aria-label="${title}: טווחים של ${g.width} נקודות">${bars}</ul><p class="histogram-note small muted">טווחים של ${g.width} נקודות. הגבול העליון אינו כלול, למעט ${g.upper}. האחוזים מחושבים מתוך ${g.valid} הציונים התקינים בלבד.</p>`:'<p class="small muted">אין ציונים תקינים להצגת התפלגות.</p>'}<details><summary>פירוט מדויק לכל ציון</summary><p class="small muted">כל ${g.total} התשובות, כולל ללא ציון וערכים חריגים. האחוזים כאן מחושבים מתוך כלל התשובות לשאלה.</p><table><thead><tr><th>ערך</th><th>תשובות</th><th>אחוז</th></tr></thead><tbody>${g.values.map(([v,c])=>`<tr><td>${esc(v==='0'&&isMor?'0 · אין ציון':v)}</td><td>${c}</td><td>${(100*c/g.total).toLocaleString('he-IL',{maximumFractionDigits:1})}%</td></tr>`).join('')}</tbody></table></details></article>`;
   }
+  const tableTracks={A:'מסלול רגיל + ציון מו״ר',B:'מסלול רגיל + ראיון פנימי',M:'מתווה מילואים',U:'לא בטוח/ה'};
+  function tableRows(rows){
+    if(!Array.isArray(rows))return [];
+    const number=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=1000?v:v==='לא תקין'?v:null;
+    return rows.filter(r=>r&&typeof r==='object').map(r=>({
+      t:Object.hasOwn(tableTracks,r.t)?r.t:null,c:number(r.c),m:number(r.m)
+    })).sort((a,b)=>(typeof b.c==='number'?b.c:-Infinity)-(typeof a.c==='number'?a.c:-Infinity));
+  }
+  function responseTable(s){
+    if(!Array.isArray(s.responseRows))return '<p class="small muted">טבלת תשובות הסקר תיטען עם רענון הנתונים מהשרת.</p>';
+    const rows=tableRows(s.responseRows);
+    const cell=(v,mor)=>{
+      if(v===null)return '<td class="response-score muted">לא צוין</td>';
+      if(v==='לא תקין')return '<td class="response-score muted">לא תקין</td>';
+      const invalid=mor?v!==0&&(v<150||v>250):v<200||v>800;
+      return `<td class="response-score${invalid?' response-invalid':''}"${invalid?' title="מחוץ לטווח החישוב"':''}><bdi>${v}</bdi>${mor&&v===0?'<small>ללא ציון</small>':''}</td>`;
+    };
+    return `<details id="surveyResponseTable" class="response-disclosure"><summary><span class="response-closed">הרחבת טבלת תשובות הסקר (${rows.length})</span><span class="response-open">צמצום טבלת תשובות הסקר (${rows.length})</span></summary><p class="small muted">תשובות הטופס המקוריות, ממוינות לפי הסכם מהגבוה לנמוך. כל שורה שומרת על השיוך בין המסלול, הסכם והמו״ר. ללא מיילים, תאריכים או פרטים מזהים.</p><div class="response-table-scroll" tabindex="0" role="region" aria-label="טבלת תשובות הסקר"><table class="response-table"><thead><tr><th scope="col">באיזה מסלול את/ה מתמיין/ת?</th><th scope="col">ציון סכם קוגנטיבי</th><th scope="col">ציון המו״ר / מרק״ם שלך</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.t?tableTracks[r.t]:'לא צוין'}</td>${cell(r.c,false)}${cell(r.m,true)}</tr>`).join('')}</tbody></table>${rows.length?'':'<p class="small muted">אין תשובות להצגה.</p>'}</div><p class="small muted">תשובות טופס אינן בהכרח אנשים ייחודיים. ערכים מחוץ לטווח מוצגים לצורכי שקיפות, אך אינם נכללים בחישוב ההמלצה. שמירה במחשבון אינה יוצרת תשובת טופס חדשה.</p></details>`;
+  }
   function render(root,s){
     if(!root)return;
     if(!s){root.replaceChildren();return;}
+    const expanded=!!root.querySelector('#surveyResponseTable')?.open;
+    const tableScroll=root.querySelector('.response-table-scroll')?.scrollTop||0;
+    const tableFocused=root.querySelector('#surveyResponseTable summary')===document.activeElement;
     const tracks=['A','B','M','U'].map(k=>({k,n:validCount(s.tracks?.[k])?s.tracks[k]:0}));
     const n=tracks.reduce((a,x)=>a+x.n,0);let offset=0;
     const gradient=tracks.map(({k,n:count})=>{const start=offset;offset+=n?100*count/n:0;return `${colors[k]} ${start}% ${offset}%`;}).join(',');
     const legend=tracks.map(({k,n:count})=>`<li><i style="background:${colors[k]}" aria-hidden="true"></i><span>${labels[k]}</span><b>${count} · ${(n?100*count/n:0).toLocaleString('he-IL',{maximumFractionDigits:1})}%</b></li>`).join('');
     root.innerHTML=`<div class="survey-chart-group"><h3>התפלגות התשובות, כמו בסקר</h3><p class="small muted">${validCount(s.totalResponses)?`${s.totalResponses} תשובות בסך הכול. `:''}לכל שאלה מספר תשובות משלה; אלו תשובות טופס ולא ספירת אנשים ייחודיים.</p><article class="survey-chart"><h3>באיזה מסלול את/ה מתמיין/ת?</h3><p class="small muted">${n} תשובות לשאלה</p><div class="survey-pie-layout"><div class="survey-donut" role="img" aria-label="התפלגות מסלולים; הפירוט ברשימה הסמוכה" style="background:${n?'conic-gradient('+gradient+')':'var(--surface-2)'}"><div><strong>${n}</strong><span>תשובות</span></div></div><ul class="survey-key">${legend}</ul></div></article>${s.distributions?frequency('ציון סכם קוגניטיבי',s.distributions.cog)+frequency('ציון מו״ר / מרק״ם',s.distributions.mor,true):'<p class="note">תרשימי הציונים יופיעו לאחר עדכון השרת. לא מוצגים במקומם נתונים מאוכלוסייה אחרת.</p>'}<p class="small muted">התרשימים משקפים גם ערכים חריגים כפי שנענו; החישוב משתמש רק בציונים תקינים. הערות חופשיות ופרטים מזהים אינם מוצגים. <a href="https://docs.google.com/forms/d/1zJFk-Yvxe-lA_lkIiRISQSKJZheKpd_RWLz0ZZGb7bU/viewanalytics" target="_blank" rel="noopener noreferrer">פתיחת סיכום Google Forms</a></p></div>`;
+    root.insertAdjacentHTML('beforeend',responseTable(s));
+    const disclosure=root.querySelector('#surveyResponseTable');
+    if(disclosure){disclosure.open=expanded;root.querySelector('.response-table-scroll').scrollTop=tableScroll;}
+    if(tableFocused)disclosure?.querySelector('summary').focus({preventScroll:true});
   }
   const style=document.getElementById('survey-chart-styles')||document.createElement('style');
   style.id='survey-chart-styles';
@@ -66,13 +92,23 @@
   .histogram-head{display:flex;justify-content:space-between;direction:ltr;font-size:.75rem;color:var(--muted);margin-top:20px}
   .histogram-excluded{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.histogram-excluded>span{padding:4px 8px;background:var(--surface-2);border-radius:6px;font-size:.8rem;color:var(--muted)}
   .histogram-note{font-size:.78rem}.survey-chart details table{table-layout:fixed}.survey-chart details td{overflow-wrap:anywhere}
+  .response-disclosure{margin-block:20px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  .response-disclosure .response-open{display:none}.response-disclosure[open] .response-open{display:inline}.response-disclosure[open] .response-closed{display:none}
+  .response-table-scroll{max-height:440px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:8px}
+  .response-table{table-layout:fixed;width:100%;margin:0;border-collapse:separate;border-spacing:0}
+  .response-table th{position:sticky;top:0;background:var(--surface-2);z-index:1;color:var(--text);font-weight:500}
+  .response-table th:first-child{width:44%}.response-table th:not(:first-child){width:28%}
+  .response-table th,.response-table td{padding:10px 8px;overflow-wrap:anywhere;font-size:.85rem;vertical-align:middle}
+  .response-table .response-score{text-align:center;font-variant-numeric:tabular-nums}.response-score small{display:block;font-size:.75rem;color:var(--muted)}
+  .response-table tbody tr:nth-child(even){background:var(--surface-2)}.response-invalid{color:var(--warn)}
+  @media(max-width:500px){.response-disclosure{padding:12px}.response-table th,.response-table td{font-size:.75rem;padding:8px 5px}}
   @media(max-width:500px){.histogram-row{grid-template-columns:62px minmax(0,1fr) 76px;gap:8px;font-size:.78rem}}
   @media(max-width:500px){.survey-chart{padding:14px}.survey-pie-layout{justify-content:center;gap:16px}.survey-key{min-width:0;flex-basis:100%}.survey-key li{font-size:.78rem}}
   `;
   document.head.appendChild(style);
   // Reloadable in an already-open v5.2 page: update its existing object instead
   // of redeclaring its global const. No authentication or score state changes.
-  const api={render,entries,grouped,version:'5.3.1'};
+  const api={render,entries,grouped,tableRows,version:'5.4.0'};
   if(typeof SurveyCharts!=='undefined')Object.assign(SurveyCharts,api);
   else globalThis.SurveyCharts=api;
 })();
