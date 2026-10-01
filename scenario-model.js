@@ -175,26 +175,47 @@ const ScenarioModel = (() => {
       lossShare:aFraction!==null&&B.length?losses/sims:null,
       atLeastEqualShare:aFraction!==null&&B.length?atLeastEqual/sims:null,sims};
   }
-  // Conservative product policy; these numerical guardrails are not scientifically
-  // validated cutoffs. There is no voting or averaging of scenario probabilities.
+  // A failed robustness check is NOT evidence for A. The main direction compares
+  // expected peer-relative positions in the explicit r=0 base case. Unvalidated
+  // MOR/internal correlations are sensitivity checks, not a personal forecast.
+  function centralRuns(runs){
+    return runs.filter(x=>x.profile==='base'&&x.allocation==='exclude'&&x.r===0);
+  }
   function switchRecommendation(runs,hasMor=true,coverageComplete=true){
     if(!hasMor)return {choice:'B',reason:'noMor'};
     if(!runs.length||runs.some(x=>x.aFraction===null||x.bFraction===null))
-      return {choice:'A',reason:'missing'};
+      return {choice:'T',reason:'missing'};
     if(!coverageComplete||runs.some(x=>x.aPeers<switchPolicy.minPeers||x.bPeers<switchPolicy.minPeers))
-      return {choice:'A',reason:'limited'};
-    const robust=runs.every(x=>x.benefitShare>=switchPolicy.minBenefitShare&&x.lossShare<=switchPolicy.maxLossShare);
-    return {choice:robust?'B':'A',reason:robust?'robust':'notRobust',
+      return {choice:'T',reason:'limited'};
+    const central=centralRuns(runs);
+    if(central.length!==methods.length||methods.some(m=>central.filter(x=>x.method===m.id).length!==1)||
+        central.some(x=>!Number.isFinite(x.aFraction)||!Number.isFinite(x.bFraction)))
+      return {choice:'T',reason:'missing'};
+    const gains=central.map(x=>x.aFraction-x.bFraction),eps=1e-10;
+    // Same symmetric directional rule for A and B, not a majority vote.
+    // 5 percentage points is a product tolerance, NOT a validated significance test.
+    const towardB=gains.every(x=>x>=-eps)&&gains.some(x=>x>=switchPolicy.minGain-eps);
+    const towardA=gains.every(x=>x<=eps)&&gains.some(x=>x<=-switchPolicy.minGain+eps);
+    const choice=towardB?'B':towardA?'A':'T';
+    const fullSensitivity=methods.every(m=>['exclude','A','B'].every(allocation=>
+      profiles.every(profile=>(profile.distribution==='uniform'?[0]:[0,.3,.6,.9]).every(r=>
+        runs.some(x=>x.method===m.id&&x.allocation===allocation&&x.profile===profile.id&&x.r===r)))));
+    const robust=fullSensitivity&&runs.every(x=>x.benefitShare>=switchPolicy.minBenefitShare&&x.lossShare<=switchPolicy.maxLossShare);
+    const reverses=choice!=='T'&&runs.some(x=>
+      choice==='B'?x.aFraction-x.bFraction<=-switchPolicy.minGain:
+        x.aFraction-x.bFraction>=switchPolicy.minGain);
+    return {choice,reason:towardB?(robust?'robust':'baselineB'):towardA?'baselineA':
+        gains.some(x=>x>eps)&&gains.some(x=>x<-eps)?'mixed':'close',
+      sensitivityReverses:reverses,
+      baseGains:central.map(x=>({method:x.method,gain:x.aFraction-x.bFraction})),
       conditionalGrade:Math.max(...runs.map(x=>x.conditionalGrade)),
       minBenefitShare:Math.min(...runs.map(x=>x.benefitShare)),
       maxLossShare:Math.max(...runs.map(x=>x.lossShare))};
   }
-  // Display only: equally weight base correlation assumptions; stress scenarios
-  // and undecided allocations remain in the decision, not in these group ranks.
-  // Bounds envelope the per-scenario central 90% ranges, NOT a confidence interval
-  // or quantiles of a pooled predictive distribution.
+  // The displayed score/rank and main decision use the SAME r=0 base scenario.
+  // The 5th–95th percentiles describe simulations, not a confidence interval.
   function comparisonSummary(runs){
-    const base=runs.filter(x=>x.profile==='base'&&x.allocation==='exclude');
+    const base=centralRuns(runs);
     if(!base.length)return null;
     const first=base[0];
     const combine=key=>{

@@ -44,15 +44,38 @@ test('changing distribution changes outcomes, not merely labels',()=>{
   assert.notEqual(base.thresholdMedian,other.thresholdMedian);
 });
 const robust={aFraction:.8,bFraction:.1,aPeers:20,bPeers:30,benefitShare:.9,lossShare:.02,conditionalGrade:210};
-test('all scenarios, not a majority, must pass conservative switch rule',()=>{
-  assert.equal(M.switchRecommendation([robust,robust]).choice,'B');
-  assert.equal(M.switchRecommendation([robust,{...robust,benefitShare:.69}]).choice,'A');
-  assert.equal(M.switchRecommendation([robust,{...robust,lossShare:.11}]).choice,'A');
+const central=(gains)=>M.methods.map((method,i)=>({...robust,method:method.id,
+  profile:'base',allocation:'exclude',r:0,aFraction:.5,bFraction:.5-gains[i]}));
+test('a failed stress test never automatically endorses A',()=>{
+  const base=central([.2,.2,.2]);
+  const stress={...base[0],profile:'lower',r:.9,benefitShare:.1,lossShare:.8,bFraction:.8};
+  const out=M.switchRecommendation([...base,stress]);
+  assert.equal(out.choice,'B');assert.equal(out.reason,'baselineB');
+  assert.equal(out.sensitivityReverses,true);
+});
+test('direction is symmetric; conflict and tiny gaps produce no recommendation',()=>{
+  assert.equal(M.switchRecommendation(central([.1,.05,0])).choice,'B');
+  assert.equal(M.switchRecommendation(central([-.1,-.05,0])).choice,'A');
+  assert.equal(M.switchRecommendation(central([.1,.1,-.1])).reason,'mixed');
+  assert.equal(M.switchRecommendation(central([.02,.03,0])).reason,'close');
+  assert.equal(M.switchRecommendation(central([.1,.1,-.1])).choice,'T');
+});
+test('robust label requires all three methods and the complete sensitivity grid',()=>{
+  assert.equal(M.switchRecommendation(central([.2,.2,.2])).reason,'baselineB');
+  const all=[];
+  for(const method of M.methods)for(const allocation of ['exclude','A','B'])for(const profile of M.profiles)
+    for(const r of profile.distribution==='uniform'?[0]:[0,.3,.6,.9])
+      all.push({...robust,method:method.id,allocation,profile:profile.id,r});
+  assert.equal(M.switchRecommendation(all).reason,'robust');
+  all[10].benefitShare=.69;
+  assert.equal(M.switchRecommendation(all).reason,'baselineB');
 });
 test('small samples, missing groups, and missing method coverage cannot endorse switching',()=>{
   assert.equal(M.switchRecommendation([{...robust,aPeers:4}]).reason,'limited');
-  assert.equal(M.switchRecommendation([robust],true,false).choice,'A');
+  assert.equal(M.switchRecommendation([robust],true,false).choice,'T');
   assert.equal(M.switchRecommendation([{...robust,bFraction:null}]).reason,'missing');
+  assert.equal(M.switchRecommendation(central([.1,.1,.1]).slice(1)).choice,'T');
+  assert.equal(M.switchRecommendation([...central([.1,.1,.1]),central([.1,.1,.1])[0]]).choice,'T');
 });
 test('no MOR means B only, not a recommendation to abandon an existing grade',()=>{
   assert.equal(M.switchRecommendation([],false).reason,'noMor');
@@ -103,15 +126,15 @@ test('B rank summary describes the same simulated peer-relative positions',()=>{
   assert(x.bRank.lo>=1&&x.bRank.hi<=x.bPeers+1);
   assert(x.bRank.lo<=x.bRank.mean&&x.bRank.mean<=x.bRank.hi);
 });
-test('display summaries exclude undecideds and stress allocations without changing means',()=>{
+test('display and main recommendation use the same unconditioned baseline',()=>{
   const runs=[0,.3,.6,.9].map(r=>M.switchRun(me,rows,{...p,r},'C'));
   const expected=M.comparisonSummary(runs);
   const extra=M.switchRun(me,rows,{...p,undecided:'A',profile:'higher'},'C');
   assert.deepEqual(M.comparisonSummary([...runs,extra]),expected);
   assert.equal(expected.aN,21);assert.equal(expected.bN,33);
-  assert.equal(expected.ownB.mean,runs.reduce((s,x)=>s+x.ownB.mean,0)/runs.length);
-  assert.equal(expected.bRank.lo,Math.min(...runs.map(x=>x.bRank.lo)));
-  assert.equal(expected.bRank.hi,Math.max(...runs.map(x=>x.bRank.hi)));
+  assert.equal(expected.ownB.mean,runs[0].ownB.mean);
+  assert.equal(expected.bRank.lo,runs[0].bRank.lo);
+  assert.equal(expected.bRank.hi,runs[0].bRank.hi);
   assert.equal(expected.aRank,runs[0].aRank);
 });
 test('empty groups do not invent a rank and absent baseline has no display summary',()=>{
@@ -125,6 +148,24 @@ test('no MOR displays only a hypothetical B score and rank, never a fabricated A
   const s=M.comparisonSummary([x]);
   assert.equal(s.ownA,null);assert.equal(s.aRank,null);
   assert(Number.isFinite(s.ownB.mean));assert(s.bRank.mean>=1);
+});
+test('regression: low MOR can favor B while high MOR can favor A on the same peers',()=>{
+  const cases=[];
+  for(const m of [150,180,207,230,250]){
+    const inputs={c:759,m,t:'A'},runs=[];
+    for(const method of M.methods)for(const allocation of ['exclude','A','B'])for(const profile of M.profiles)
+      for(const r of profile.distribution==='uniform'?[0]:[0,.3,.6,.9])
+        runs.push(M.switchRun(inputs,rows,{...p,...profile,profile:profile.id,r,undecided:allocation},method.id));
+    cases.push({m,decision:M.switchRecommendation(runs),runs});
+  }
+  assert.equal(cases[0].decision.choice,'B');
+  assert.equal(cases.at(-1).decision.choice,'A');
+  for(const method of M.methods){
+    const base=cases.map(c=>c.runs.find(x=>x.method===method.id&&x.profile==='base'&&x.r===0&&x.allocation==='exclude'));
+    assert(base.every(x=>x.ownB.mean===base[0].ownB.mean));
+    for(let i=1;i<base.length;i++)assert(base[i].aFraction<=base[i-1].aFraction);
+  }
+  console.log('Synthetic fixture MOR sweep:',cases.map(c=>`${c.m}:${c.decision.choice}`).join(', '));
 });
 console.log(`${passed} model checks passed`);
 if(process.argv.includes('--bench')){
