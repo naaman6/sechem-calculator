@@ -8,7 +8,7 @@
 - בהתחברות, הרשומה הקיימת נטענת וההמלצה מחושבת ללא כתיבה מיותרת. השדות נשארים ניתנים לעריכה בזמן שמירה. סגירת העמוד עם שינוי שטרם נשמר מציגה אזהרת דפדפן.
 - התרשימים מציגים ספירות מקוריות מהטופס: מסלולים, סכם קוגניטיבי ומו״ר. מספר התשובות לכל שאלה מחושב בנפרד; גם 0 וערכים לא תקינים מופיעים בסיכום, אבל אינם הופכים לציונים תקינים במודל. הערות חופשיות, מיילים ומזהים אינם מוחזרים בתרשימים.
 - `auth-redirect.js` מוכן ל־OpenID Connect עם `response_type=id_token`, בדיקות `state` ו־`nonce`, אימות השרת וניקוי מיידי של ה־fragment. אין שמירת אסימון ב־localStorage או sessionStorage ואין שימוש ב־Client secret. יציאה או ביטול עוצרים הפניה חוזרת.
-- ההפניה כבויה עד רישום ואישור הכתובת המדויקת `https://naaman6.github.io/sechem-calculator/` ב־Authorized redirect URIs של הלקוח. עד אז נשמרת ההתחברות הקיימת. Google עשויה לדרוש בחירת חשבון או אישור גם לאחר הפעלת ההפניה. ראו [תיעוד OpenID Connect של Google](https://developers.google.com/identity/openid-connect/reference).
+- ההפניה האוטומטית פעילה באתר המקורי, לאחר רישום ואישור הכתובת המדויקת `https://naaman6.github.io/sechem-calculator/` ב־Authorized redirect URIs של הלקוח. היא אינה מופעלת בתצוגה המקדימה או במארח אחר. Google עשויה לדרוש בחירת חשבון או אישור; אין אפשרות לעקוף אותם. ראו [תיעוד OpenID Connect של Google](https://developers.google.com/identity/openid-connect/reference).
 
 ## תנאי מעבר ממכסה א׳ לב׳
 

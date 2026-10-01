@@ -4,7 +4,7 @@
 const RedirectAuth=(()=>{
   const CALLBACK='https://naaman6.github.io/sechem-calculator/';
   const TX='sechem.oidc.transaction',PAUSE='sechem.oidc.pause';
-  const ENABLED=false; // Enable only after the exact callback is registered in Google Cloud.
+  const ENABLED=true; // Exact callback registered and approved in Google Cloud.
   const enabled=()=>ENABLED&&location.origin==='https://naaman6.github.io';
   let starting=false;
   function pause(){try{sessionStorage.setItem(PAUSE,'1');}catch(_){}}
