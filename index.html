@@ -111,6 +111,11 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 .stat .t{font-size:.82rem;color:var(--muted)}
 .row2{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
 #gsiBtn{min-height:40px}
+.auth-card{padding:18px 22px}
+.auth-card h2{margin-bottom:6px}
+.auth-card p{margin:4px 0}
+.auth-account{overflow-wrap:anywhere}
+.auth-card:focus{outline:2px solid var(--accent);outline-offset:3px}
 .pill{display:inline-block;font-size:.8rem;padding:2px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
 .hidden{display:none !important}
 .adv label{font-weight:400;font-size:.95rem}
@@ -127,6 +132,18 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 <p class="lede">כלי לא רשמי של קבוצת המועמדים. מזינים שלושה נתונים, והמחשבון משווה אותך למועמדים האחרים שענו על הסקר ואומר בשפה פשוטה באיזו מכסה הסיכוי שלך גבוה יותר: <strong>מכסה א׳</strong> (ציון מו"ר קיים) או <strong>מכסה ב׳</strong> (מבדק וראיון פנימיים של אריאל). ההחלטה מחייבת, ולכן כדאי להבין את המספרים לפני יום שלישי 6.10 בשעה 10:00.</p>
 
 <!-- ============ STEP 1: INPUTS ============ -->
+<section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
+  <h2 id="authTitle">התחברות לשמירה בלבד</h2>
+  <p class="small muted">אפשר לחשב ולקבל המלצה בלי להתחבר. התחברות עם Google נדרשת רק לשמירה לסקר, ורק לחיצה על „שמור את הנתונים שלי” תשלח את הציונים.</p>
+  <div class="row2"><div id="gsiBtn"></div></div>
+  <p id="authStatus" class="small muted" role="status" aria-live="polite">טוען את אפשרות ההתחברות… אפשר להתחיל לחשב בינתיים.</p>
+  <p id="who" class="small auth-account hidden" aria-live="polite"></p>
+  <div class="row2">
+    <button type="button" id="authRetry" class="hidden">נסה שוב לטעון התחברות</button>
+    <button type="button" id="signOut" class="hidden">יציאה / החלפת חשבון</button>
+  </div>
+</section>
+
 <section class="card" id="inputs">
   <h2><span class="step">1</span> הנתונים שלך</h2>
 
@@ -234,7 +251,8 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
   <p class="small muted" style="margin:0 0 10px">ככל שיותר מועמדים מזינים, ההמלצה לכולם מדויקת יותר. השמירה דורשת התחברות עם Google רק כדי שלכל אדם תהיה שורה אחת: אם תחזור/י ותעדכן/י, הנתונים הקודמים שלך יוחלפו ולא ייספרו פעמיים. <strong>לא נשמר שם ולא מייל</strong> – רק מזהה מוצפן, הציונים והמסלול.</p>
   <div id="saveOff" class="note hidden">השמירה עדיין לא הופעלה על ידי מנהל הקבוצה. המחשבון עובד על עותק של נתוני הסקר מתאריך <bdi dir="ltr" id="snapDate"></bdi>.</div>
   <div id="saveOn">
-    <div class="row2"><div id="gsiBtn"></div><span class="pill hidden" id="who"></span></div>
+    <p class="small muted" id="saveAuthHint">לשמירה יש להתחבר עם Google בראש העמוד.</p>
+    <button type="button" id="showAuth">מעבר להתחברות</button>
     <div class="row2"><button type="button" class="primary" id="submit" disabled>שמור את הנתונים שלי</button></div>
     <div id="saveMsg" class="small muted" style="margin-top:8px"></div>
   </div>
@@ -289,19 +307,25 @@ const pct=n=>Math.round(n*100)+'%';
 
 function rowsFromSnapshot(){return SNAPSHOT.map(r=>({c:r[0],m:r[1],t:r[2]}));}
 let DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot',updated:CONFIG.SNAPSHOT_DATE};
-let MY_UID=localStorage.getItem('sechem_uid')||null;
+let MY_UID=null;
 let ID_TOKEN=null, LAST_RESULT=null;
+let AUTH_SUB=null, AUTH_LOADING=false, AUTH_ATTEMPT=0, AUTH_TIMER=null, SAVING=false;
 
 async function loadData(){
   if(!CONFIG.API_URL){DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot',updated:CONFIG.SNAPSHOT_DATE};return;}
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),12000);
   try{
-    const r=await fetch(CONFIG.API_URL,{redirect:'follow'});
+    const r=await fetch(CONFIG.API_URL,{redirect:'follow',signal:controller.signal});
+    if(!r.ok) throw new Error('data unavailable');
     const j=await r.json();
-    if(!j.ok) throw new Error(j.error||'bad');
+    if(!j.ok||!Array.isArray(j.form)||!Array.isArray(j.calc)) throw new Error('bad data');
     DATA={form:j.form,calc:j.calc,source:'live',updated:new Date(j.updated).toLocaleString('he-IL')};
   }catch(e){
-    console.warn('live data failed, using snapshot',e);
+    console.warn('Live data unavailable; using the dated snapshot.');
     DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot-fallback',updated:CONFIG.SNAPSHOT_DATE};
+  }finally{
+    clearTimeout(timeout);
   }
 }
 
@@ -551,34 +575,103 @@ function renderStats(){
 
 /* ======================= GOOGLE SIGN-IN & SAVE =======================*/
 function decodeJwt(t){try{return JSON.parse(decodeURIComponent(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}catch(e){return{};}}
+function syncAuthUi(){
+  const signedIn=!!ID_TOKEN;
+  $('submit').disabled=!signedIn||SAVING;
+  $('signOut').disabled=SAVING;
+  $('signOut').classList.toggle('hidden',!signedIn);
+  $('who').classList.toggle('hidden',!signedIn);
+  $('gsiBtn').classList.toggle('hidden',signedIn);
+  $('showAuth').classList.toggle('hidden',signedIn);
+  $('saveAuthHint').textContent=signedIn?'מחובר/ת. הנתונים יישלחו רק בלחיצה על כפתור השמירה.':'לשמירה יש להתחבר עם Google בראש העמוד.';
+}
+function clearAuth(message){
+  clearTimeout(AUTH_TIMER);
+  ID_TOKEN=null; AUTH_SUB=null; MY_UID=null;
+  $('who').textContent='';
+  $('saveMsg').textContent='';
+  $('authStatus').textContent=message||'יצאת מהמחשבון. אפשר להמשיך לחשב בלי להתחבר, או לבחור חשבון לשמירה.';
+  window.google?.accounts?.id?.disableAutoSelect();
+  syncAuthUi();
+  renderStats();
+  if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));
+}
+function receiveCredential(resp){
+  if(SAVING)return;
+  const p=decodeJwt(resp.credential||'');
+  const remaining=Number(p.exp)*1000-Date.now();
+  if(!p.sub||!Number.isFinite(remaining)||remaining<=0){
+    clearAuth('ההתחברות לא הושלמה או פגה. יש לבחור שוב חשבון Google.');
+    return;
+  }
+  if(AUTH_SUB!==p.sub)MY_UID=null;
+  AUTH_SUB=p.sub; ID_TOKEN=resp.credential;
+  clearTimeout(AUTH_TIMER);
+  AUTH_TIMER=setTimeout(()=>clearAuth('תוקף ההתחברות פג. אפשר להמשיך לחשב; לשמירה יש להתחבר שוב.'),Math.min(remaining,2147483647));
+  $('who').textContent=`מחובר/ת: ${p.name||p.given_name||'חשבון Google'}${p.email?' · '+p.email:''}`;
+  $('authStatus').textContent='החשבון נבחר. התחברות לבדה אינה שולחת את הציונים לסקר.';
+  $('authRetry').classList.add('hidden');
+  $('saveMsg').textContent='';
+  syncAuthUi();
+  renderStats();
+  if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));
+}
 function initAuth(){
-  if(!CONFIG.CLIENT_ID||!CONFIG.API_URL){$('saveOff').classList.remove('hidden');$('saveOn').classList.add('hidden');return;}
-  const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
-  s.onload=()=>{
-    google.accounts.id.initialize({client_id:CONFIG.CLIENT_ID,callback:(resp)=>{
-      ID_TOKEN=resp.credential; const p=decodeJwt(ID_TOKEN);
-      $('who').textContent=`מחובר/ת${p.given_name?' כ-'+p.given_name:''} · נשמר רק מזהה מוצפן`; $('who').classList.remove('hidden');
-      $('submit').disabled=false;
-    },auto_select:true,itp_support:true});
-    google.accounts.id.renderButton($('gsiBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'he',shape:'pill'});
+  if(AUTH_LOADING||ID_TOKEN)return;
+  if(!CONFIG.CLIENT_ID||!CONFIG.API_URL){
+    $('saveOff').classList.remove('hidden');$('saveOn').classList.add('hidden');
+    $('authStatus').textContent='שמירה אינה מוגדרת כרגע. החישוב זמין בלי התחברות.';
+    return;
+  }
+  AUTH_LOADING=true;
+  const attempt=++AUTH_ATTEMPT;
+  $('authRetry').classList.add('hidden');
+  $('authStatus').textContent='טוען את אפשרות ההתחברות… אפשר להתחיל לחשב בינתיים.';
+  let timer;
+  const fail=()=>{
+    if(attempt!==AUTH_ATTEMPT)return;
+    clearTimeout(timer); AUTH_LOADING=false;
+    $('authStatus').textContent='אפשרות ההתחברות לא נטענה. אפשר לחשב כרגיל; לשמירה נסה/י שוב או בדוק/י אם הדפדפן חוסם את שירות Google.';
+    $('authRetry').classList.remove('hidden');
   };
+  const ready=()=>{
+    if(attempt!==AUTH_ATTEMPT)return;
+    clearTimeout(timer); AUTH_LOADING=false;
+    try{
+      google.accounts.id.initialize({client_id:CONFIG.CLIENT_ID,callback:receiveCredential,auto_select:false,itp_support:true});
+      $('gsiBtn').replaceChildren();
+      google.accounts.id.renderButton($('gsiBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'he',shape:'pill',width:240});
+      $('authStatus').textContent='לא מחובר/ת. אפשר לחשב כרגיל; לשמירה בחר/י חשבון בכפתור Google.';
+      $('authRetry').classList.add('hidden');
+      syncAuthUi();
+    }catch(e){fail();}
+  };
+  timer=setTimeout(fail,12000);
+  if(window.google?.accounts?.id){ready();return;}
+  document.querySelector('script[data-sechem-auth]')?.remove();
+  const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
+  s.dataset.sechemAuth='true'; s.onload=ready; s.onerror=fail;
   document.head.appendChild(s);
 }
 async function submitMe(){
+  if(SAVING)return;
   if(!LAST_RESULT){$('saveMsg').textContent='קודם לחצ/י "הצג לי המלצה".';return;}
   if(!ID_TOKEN){$('saveMsg').textContent='יש להתחבר עם Google.';return;}
-  const me=LAST_RESULT.me; $('submit').disabled=true; $('saveMsg').textContent='שומר…';
+  const requestToken=ID_TOKEN;
+  const me=LAST_RESULT.me; SAVING=true; syncAuthUi(); $('saveMsg').textContent='שומר…';
   try{
-    const r=await fetch(CONFIG.API_URL,{method:'POST',redirect:'follow',body:JSON.stringify({id_token:ID_TOKEN,cog:me.c,mor:me.m,track:me.t,filledForm:me.filledForm})});
+    const r=await fetch(CONFIG.API_URL,{method:'POST',redirect:'follow',body:JSON.stringify({id_token:requestToken,cog:me.c,mor:me.m,track:me.t,filledForm:me.filledForm})});
     const j=await r.json();
     if(!j.ok)throw new Error(j.error||'שגיאה');
-    MY_UID=j.uid; localStorage.setItem('sechem_uid',MY_UID);
+    if(ID_TOKEN!==requestToken)return;
+    MY_UID=j.uid;
     $('saveMsg').innerHTML='<span class="ok" style="display:block">נשמר. אם תחזור/י ותשנה/י נתונים, השורה שלך תתעדכן ולא תיספר פעמיים.</span>';
     await loadData(); renderStats(); render(me,analyze(me));
   }catch(e){
+    if(ID_TOKEN!==requestToken)return;
+    if(/אסימון/.test(e.message))clearAuth('תוקף ההתחברות אינו תקין. לשמירה יש להתחבר שוב.');
     $('saveMsg').textContent='השמירה נכשלה: '+e.message+(/אסימון/.test(e.message)?' (התחבר/י שוב)':'');
-    if(/אסימון/.test(e.message))ID_TOKEN=null;
-  }finally{$('submit').disabled=!ID_TOKEN;}
+  }finally{SAVING=false; syncAuthUi();}
 }
 
 /* ======================= WIRING =======================*/
@@ -592,8 +685,13 @@ $('go').addEventListener('click',()=>{const me=readMe(); if(!me)return; render(m
 ['rCorr','muOv','sdOv'].forEach(id=>$(id).addEventListener('input',()=>{$('rCorrV').textContent=$('rCorr').value; if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
 document.querySelectorAll('input[name=undec]').forEach(r=>r.addEventListener('change',()=>{if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
 $('submit').addEventListener('click',submitMe);
+$('showAuth').addEventListener('click',()=>{$('auth').scrollIntoView({behavior:'smooth',block:'start'});$('auth').focus({preventScroll:true});});
+$('authRetry').addEventListener('click',initAuth);
+$('signOut').addEventListener('click',()=>{if(!SAVING)clearAuth();});
 
-(async()=>{await loadData(); renderStats(); initAuth();})();
+initAuth();
+renderStats();
+(async()=>{await loadData(); renderStats(); if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));})();
 </script>
 </body>
 </html>
