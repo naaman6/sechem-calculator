@@ -129,6 +129,9 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 .own{background:var(--accent-soft)}
 #scenarioOutput{margin-top:18px}
 #scenarioOutput p{overflow-wrap:anywhere}
+.compact-scores table{min-width:0;table-layout:fixed;width:100%}
+.compact-scores th,.compact-scores td{padding:12px 8px;overflow-wrap:anywhere}
+.compact-scores th:first-child{width:42%}
 @media(max-width:600px){.mini{grid-template-columns:1fr}select{font-size:.92rem}}
 </style>
 </head>
@@ -138,7 +141,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
   <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 22V10m7 12V14m7 8V7" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
   <h1>איך כדאי לי להתמיין לרפואה באריאל?</h1>
 </header>
-<p class="lede">כלי תרחישים לא רשמי למועמדי רפואה באריאל. משווים סכם סופי משוער במכסה א׳ (מו״ר קיים) ובמכסה ב׳ (מיון פנימי), תוך הצגת ההתפלגות וההנחות. אין כאן נוסחת קבלה מאומתת, המלצה לוותר על ציון קיים או הסתברות קבלה אישית.</p>
+<p class="lede">הסכם הסופי המשוער שלך בכל שיטה, לצד המלצה מסויגת בין מכסה א׳ (מו״ר קיים) למכסה ב׳ (מיון פנימי). ההמלצה מבוססת על נתוני הסקר והנחות המודל, אינה רשמית ועלולה להיות שגויה.</p>
 
 <!-- ============ STEP 1: INPUTS ============ -->
 <section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
@@ -215,7 +218,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 <section class="card"><div id="stats"></div></section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 4.0: תרחישים שקופים, ללא תחזית קבלה.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 4.1: המלצה מסויגת וסכם משוער, ללא תחזית קבלה.
 </footer>
 </div>
 
@@ -457,7 +460,7 @@ $('inputFields').addEventListener('input',()=>{
 });
 
 </script>
-<script src="scenario-model.js?v=4"></script>
-<script src="scenario-ui.js?v=4"></script>
+<script src="scenario-model.js?v=4.1"></script>
+<script src="scenario-ui.js?v=4.1"></script>
 </body>
 </html>

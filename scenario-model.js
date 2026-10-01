@@ -88,6 +88,18 @@ const ScenarioModel = (() => {
       aFraction:aRank==null?null:(aRank-.5)/(A.length+1),
       bFraction:ranks.length?(summary(ranks).mean-.5)/(B.length+1):null};
   }
-  return {methods,moments,summary,score,groups,run};
+  // A transparent decision heuristic, not a probability or a validated ensemble.
+  // Compare within-group relative ranks, never scores from different scales.
+  function recommendation(runs,hasMor=true){
+    if(!hasMor)return {choice:'B',reason:'noMor',mixed:false};
+    const differences=runs.filter(x=>x.aFraction!==null&&x.bFraction!==null)
+      .map(x=>x.aFraction-x.bFraction);
+    if(!differences.length)return {choice:null,reason:'missing',mixed:false};
+    const middle=summary(differences).median;
+    const mixed=differences.some(x=>x>.03)&&differences.some(x=>x<-.03);
+    if(Math.abs(middle)<=.03)return {choice:'A',reason:'close',mixed};
+    return {choice:middle>0?'B':'A',reason:'rank',mixed};
+  }
+  return {methods,moments,summary,score,groups,run,recommendation};
 })();
 if(typeof module!=='undefined')module.exports=ScenarioModel;
