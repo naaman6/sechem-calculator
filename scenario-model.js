@@ -160,6 +160,8 @@ const ScenarioModel = (() => {
       aPeers:A.length,bPeers:B.length,excluded,ownA,aRank,aFraction,
       ownB:summary(ownFinal),internal:summary(ownInternal),
       bFraction:bFractions.length?summary(bFractions).mean:null,
+      // Same simulated cohorts and draws as the recommendation, not rank by mean score.
+      bRank:bFractions.length?summary(bFractions.map(f=>1+f*B.length)):null,
       thresholdMedian:thresholds.length?empiricalQuantile(thresholds,.5):null,
       thresholdP90:thresholds.length?empiricalQuantile(thresholds,.9):null,
       thresholdImpossibleShare:thresholds.length?thresholds.filter(x=>!Number.isFinite(x)).length/sims:null,
@@ -187,7 +189,23 @@ const ScenarioModel = (() => {
       minBenefitShare:Math.min(...runs.map(x=>x.benefitShare)),
       maxLossShare:Math.max(...runs.map(x=>x.lossShare))};
   }
+  // Display only: equally weight base correlation assumptions; stress scenarios
+  // and undecided allocations remain in the decision, not in these group ranks.
+  // Bounds envelope the per-scenario central 90% ranges, NOT a confidence interval
+  // or quantiles of a pooled predictive distribution.
+  function comparisonSummary(runs){
+    const base=runs.filter(x=>x.profile==='base'&&x.allocation==='exclude');
+    if(!base.length)return null;
+    const first=base[0];
+    const combine=key=>{
+      if(base.some(x=>!x[key]))return null;
+      return {mean:base.reduce((s,x)=>s+x[key].mean,0)/base.length,
+        lo:Math.min(...base.map(x=>x[key].lo)),hi:Math.max(...base.map(x=>x[key].hi))};
+    };
+    return {ownA:first.ownA,aRank:first.aRank,aPeers:first.aPeers,aN:first.aPeers+1,
+      ownB:combine('ownB'),bRank:combine('bRank'),bPeers:first.bPeers,bN:first.bPeers+1};
+  }
   return {methods,moments,summary,score,groups,run,profiles,switchPolicy,
-    inverseScore,threshold,switchRun,switchRecommendation};
+    inverseScore,threshold,switchRun,switchRecommendation,comparisonSummary};
 })();
 if(typeof module!=='undefined')module.exports=ScenarioModel;

@@ -45,9 +45,35 @@ function renderStats(){
 let ANALYSIS_JOB=0;
 function thresholdLabel(value){
   if(value===null)return 'אין קבוצה';
-  if(!Number.isFinite(value))return 'מעל 250';
+  if(!Number.isFinite(value))return 'לא נמצא עד 250';
   if(value<=150)return '150';
   return String(Math.ceil(value));
+}
+function positionLabel(value){
+  return Number.isInteger(value)?String(value):f1(value);
+}
+function comparisonMarkup(method,runs,hasMor){
+  const s=ScenarioModel.comparisonSummary(runs);
+  if(!s)return `<article class="comparison-card"><h3>${method.name}</h3><p>אין מספיק נתונים לחישוב.</p></article>`;
+  const aPosition=s.aRank===null?'אין מספיק רשומות לדירוג':
+    `מקום ${positionLabel(s.aRank)} מתוך ${s.aN}`;
+  const bPosition=s.bRank?`מקום כ־${Math.round(s.bRank.mean)} מתוך ${s.bN}`:'אין מספיק רשומות לדירוג';
+  const rankRange=s.bRank?`<span class="comparison-range">טווח מיקום משוער: <bdi dir="ltr">${Math.max(1,Math.floor(s.bRank.lo+1e-9))}–${Math.min(s.bN,Math.ceil(s.bRank.hi-1e-9))}</bdi></span>`:'';
+  const conditions=runs.map(x=>x.conditionalGrade).filter(x=>x!==null);
+  const threshold=conditions.length?thresholdLabel(Math.max(...conditions)):null;
+  return `<article class="comparison-card">
+    <h3>${method.name}</h3>
+    <div class="comparison-grid ${hasMor?'':'single'}">
+      ${hasMor?`<div class="comparison-group"><h4>מכסה א׳ · מו״ר</h4>
+        <span class="comparison-label">סכם סופי משוער</span><strong class="comparison-score">${f1(s.ownA)}</strong>
+        <strong class="comparison-rank">${aPosition}</strong><span class="comparison-range">לפי הציונים שדווחו</span></div>`:''}
+      <div class="comparison-group"><h4>מכסה ב׳ · ראיון</h4>
+        <span class="comparison-label">סכם סופי משוער</span><strong class="comparison-score">${f1(s.ownB.mean)}</strong>
+        <strong class="comparison-rank">${bPosition}</strong>${rankRange}
+        <span class="comparison-range">הערכה, לא מיקום ידוע</span></div>
+    </div>
+    ${hasMor&&threshold!==null?`<p class="comparison-foot">רף הזהירות במיון הפנימי לפי שיטה זו: <strong>${threshold}</strong>. זה לא ציון מינימום לקבלה.</p>`:''}
+  </article>`;
 }
 async function renderRecommendation(me){
   if(!AUTH_VERIFIED)return;
@@ -71,7 +97,7 @@ async function renderRecommendation(me){
     for(const method of ScenarioModel.methods){
       if(method.id==='C'&&!(Number.isFinite(params.sd)&&params.sd>0)){
         coverageComplete=false;
-        rows.push(`<tr><td>${method.name}</td><td colspan="${hasMor?3:1}">אין פיזור מספיק לחישוב</td></tr>`);continue;
+        rows.push(`<article class="comparison-card"><h3>${method.name}</h3><p>אין פיזור מספיק לחישוב.</p></article>`);continue;
       }
       const methodRuns=[];
       for(const allocation of (hasMor?['exclude','A','B']:['exclude'])){
@@ -85,22 +111,14 @@ async function renderRecommendation(me){
         }
       }
       allRuns.push(...methodRuns);
-      const baseline=methodRuns.filter(x=>x.allocation==='exclude'&&x.profile==='base');
-      const bMean=baseline.reduce((s,x)=>s+x.ownB.mean,0)/baseline.length;
-      if(hasMor){
-        const conditions=methodRuns.map(x=>x.conditionalGrade).filter(x=>x!==null);
-        const condition=conditions.length?Math.max(...conditions):null;
-        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(baseline[0].ownA)}</td><td class="num">${f1(bMean)}</td><td>${thresholdLabel(condition)}</td></tr>`);
-      }else{
-        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(bMean)}</td></tr>`);
-      }
+      rows.push(comparisonMarkup(method,methodRuns,hasMor));
     }
     if(!current())return;
     const decision=ScenarioModel.switchRecommendation(allRuns,hasMor,coverageComplete);
     let title,why;
     if(decision.reason==='noMor'){
       title='ללא מו״ר: מכסה ב׳ היא המסלול הרלוונטי';
-      why='אין לך כרגע ציון מו״ר שאפשר להשתמש בו להשוואה למסלול א׳. הטבלה מראה איך הסכם שלך בב׳ עשוי להיראות, אבל ציון המיון הפנימי עדיין לא ידוע.';
+      why='אין לך כרגע ציון מו״ר שאפשר להשתמש בו להשוואה למסלול א׳. התוצאות מראות איך הסכם והמיקום שלך בב׳ עשויים להיראות, אבל ציון המיון הפנימי עדיין לא ידוע.';
     }else if(decision.reason==='robust'){
       title='יש בסיס במודל לשקול מעבר למכסה ב׳';
       why='לפי הנתונים והאפשרויות שבדקנו, מעבר לב׳ נראה כדאי גם כשמשנים את ההנחות לגבי ציוני המיון ובחירת המסלול של המתלבטים. לכן יש סיבה לשקול מעבר. עדיין לא ידוע איזה ציון תקבל במיון הפנימי, ואין כאן הבטחת קבלה.';
@@ -119,8 +137,16 @@ async function renderRecommendation(me){
     }
     $('scenarioOutput').innerHTML=`
       <div class="info"><h3 style="margin:0 0 8px">${title}</h3><p style="margin:0">${why}</p>${conditionText}</div>
-      <div class="table-scroll compact-scores ${hasMor?'switch-scores':''}"><table><thead><tr><th>שיטה</th>${hasMor?'<th>סכם בא׳</th>':''}<th>סכם משוער בב׳</th>${hasMor?'<th>רף זהירות בב׳*</th>':''}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
-      ${hasMor?'<p class="small muted">* רף הזהירות הוא ציון במיון הפנימי, לא סכם סופי ולא ציון מינימום לקבלה. בהסבר למעלה מוצג הרף הגבוה מבין השיטות. הסכם המשוער בב׳ מבוסס על ציונים אפשריים שעדיין לא קיבלת. משווים בין א׳ לב׳ באותה שורה, לא בין הציונים בשיטות שונות.</p>':'<p class="small muted">הסכם המשוער בב׳ מבוסס על ציונים אפשריים במיון הפנימי, לא על ציון שכבר קיבלת. לכל שיטה סולם ציונים אחר, ולכן אין להשוות מספרים בין השיטות.</p>'}
+      <h3 class="comparison-title">הסכם הסופי והמיקום שלך בכל קבוצה</h3>
+      <p class="small muted">מקום 1 הוא הגבוה ביותר. המיקום הוא ביחס לרשומות במאגר, כולל אותך, ולא לכל המועמדים באוניברסיטה. המתלבטים ומתווה המילואים אינם נכללים בדירוגים האלה.</p>
+      <div class="comparisons">${rows.join('')}</div>
+      <p class="small muted">כל המספרים הם אומדן לפי נוסחאות המחשבון, לא ציון קבלה רשמי. בתוך כל שיטה אפשר להשוות בין א׳ לב׳, אבל אין להשוות מספרים בין שיטות שונות. הסכם והמיקום בב׳ מבוססים על ציוני מיון אפשריים שעדיין לא התקבלו.</p>
+      <details class="comparison-details"><summary>איך לקרוא את המיקום והטווח?</summary>
+        <p class="small">בא׳ משקללים את הציונים שדווחו ומשווים את הסכם שלך לסכם של כל רשומה בקבוצה. בתיקו מוצג מקום ממוצע, ולכן ייתכן מספר כמו 7.5. בב׳ מדמים ציוני מיון פנימי לכל הקבוצה, מחשבים סכם לכל רשומה ומדרגים מחדש בכל הדמיה.</p>
+        <p class="small">המספר הראשי בב׳ הוא ממוצע בדיקות הבסיס. בבסיס הונחה התפלגות ציונים סביב 200 עם סטיית תקן 20, מוגבלת ל־150–250. כשיש מו״ר, נבדקו ארבע הנחות לגבי הקשר בינו לבין המיון הפנימי, במשקל שווה; בלי מו״ר משתמשים בבסיס ללא קשר כזה.</p>
+        <p class="small">טווח המיקום מאחד את הטווחים המרכזיים של 90% מההדמיות בכל אחת מהנחות הבסיס. זה אינו רווח סמך או סיכוי קבלה, ומיקום בפועל יכול להיות גם מחוץ לטווח. קבוצות קטנות או כפילויות במאגר עלולות לשנות מאוד את התוצאה.</p>
+        <p class="small">רשומת החשבון שלך אינה נספרת שוב כמתחרה. תשובות ישנות ללא זיהוי עלולות להישאר ככפילויות, לרבות תשובה ישנה שלך. המתלבטים נכללים בבדיקות הזהירות של ההמלצה, אך לא בדירוג הקבוצות שמוצג כאן.</p>
+      </details>
       <p class="note small"><strong>זו עזרה בהתלבטות, לא תחזית קבלה.</strong> הסקר לא בהכרח משקף את כל המועמדים, וייתכנו בו כפילויות. ציוני המיון הפנימי עדיין לא ידועים, וכלל הזהירות שבחרנו אינו כלל מדעי מוכח. לכן ההמלצה יכולה להיות שגויה. <a href="https://github.com/naaman6/sechem-calculator/blob/main/README.md#כלל-ההחלטה" target="_blank" rel="noopener">איך המחשבון מחליט?</a></p>`;
     LAST_RESULT={me,analysis:{decision,runs:allRuns}};
   }catch(e){if(current())$('scenarioOutput').textContent=e.message;}

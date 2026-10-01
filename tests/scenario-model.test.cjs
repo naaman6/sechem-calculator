@@ -97,7 +97,36 @@ test('a tie at maximum grade cannot be treated as strictly better than the peer'
     assert.equal(M.threshold(me.c,.5,[top],p,method.id),250);
   }
 });
-console.log(`${passed} v5.1 checks passed`);
+test('B rank summary describes the same simulated peer-relative positions',()=>{
+  const x=M.switchRun(me,rows,p,'C');
+  assert(Math.abs(x.bRank.mean-(1+x.bFraction*x.bPeers))<1e-9);
+  assert(x.bRank.lo>=1&&x.bRank.hi<=x.bPeers+1);
+  assert(x.bRank.lo<=x.bRank.mean&&x.bRank.mean<=x.bRank.hi);
+});
+test('display summaries exclude undecideds and stress allocations without changing means',()=>{
+  const runs=[0,.3,.6,.9].map(r=>M.switchRun(me,rows,{...p,r},'C'));
+  const expected=M.comparisonSummary(runs);
+  const extra=M.switchRun(me,rows,{...p,undecided:'A',profile:'higher'},'C');
+  assert.deepEqual(M.comparisonSummary([...runs,extra]),expected);
+  assert.equal(expected.aN,21);assert.equal(expected.bN,33);
+  assert.equal(expected.ownB.mean,runs.reduce((s,x)=>s+x.ownB.mean,0)/runs.length);
+  assert.equal(expected.bRank.lo,Math.min(...runs.map(x=>x.bRank.lo)));
+  assert.equal(expected.bRank.hi,Math.max(...runs.map(x=>x.bRank.hi)));
+  assert.equal(expected.aRank,runs[0].aRank);
+});
+test('empty groups do not invent a rank and absent baseline has no display summary',()=>{
+  const x=M.switchRun(me,[],p,'B');
+  const s=M.comparisonSummary([x]);
+  assert.equal(s.aRank,null);assert.equal(s.bRank,null);
+  assert.equal(M.comparisonSummary([]),null);
+});
+test('no MOR displays only a hypothetical B score and rank, never a fabricated A score',()=>{
+  const x=M.switchRun({...me,m:null},rows,p,'B');
+  const s=M.comparisonSummary([x]);
+  assert.equal(s.ownA,null);assert.equal(s.aRank,null);
+  assert(Number.isFinite(s.ownB.mean));assert(s.bRank.mean>=1);
+});
+console.log(`${passed} model checks passed`);
 if(process.argv.includes('--bench')){
   const start=Date.now();const runs=[];
   for(const m of M.methods)for(const allocation of ['exclude','A','B'])for(const profile of M.profiles)

@@ -130,6 +130,21 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 .own{background:var(--accent-soft)}
 #scenarioOutput{margin-top:18px}
 #scenarioOutput p{overflow-wrap:anywhere}
+.comparison-title{margin-top:24px}
+.comparisons{display:grid;gap:14px}
+.comparison-card{border:1px solid var(--border);border-radius:12px;padding:16px;min-width:0}
+.comparison-card h3{margin:0 0 12px;font-size:1rem}
+.comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.comparison-grid.single{grid-template-columns:1fr}
+.comparison-group{min-width:0;padding:12px;background:var(--surface-2);border-radius:10px}
+.comparison-group h4{font-size:.9rem;margin:0 0 12px}
+.comparison-label,.comparison-range{display:block;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.comparison-score{display:block;font-size:1.85rem;line-height:1.3;font-variant-numeric:tabular-nums;margin:2px 0 12px}
+.comparison-rank{display:block;font-size:.95rem;margin-bottom:3px}
+.comparison-foot{font-size:.8rem;color:var(--muted);margin:12px 0 0}
+.comparison-details{margin:16px 0}
+.comparison-details summary{cursor:pointer;font-weight:600}
+@media(max-width:420px){.comparison-card{padding:12px}.comparison-grid{gap:8px}.comparison-group{padding:10px 8px}.comparison-rank{font-size:.85rem}}
 .compact-scores table{min-width:0;table-layout:fixed;width:100%}
 .compact-scores th,.compact-scores td{padding:12px 8px;overflow-wrap:anywhere}
 .compact-scores th:first-child{width:42%}
@@ -203,6 +218,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
       <input type="radio" name="track" id="trM" value="M"><label for="trM">מתווה מילואים</label>
     </div>
     <div class="err" id="trackErr"></div>
+    <p class="small muted" id="trackEditHelp">אפשר לשנות את המסלול גם אחרי השמירה: מתחברים שוב עם אותו חשבון Google ובוחרים מסלול אחר. השינוי נשמר אוטומטית באותה רשומה, כולל מעבר למתווה מילואים. שינוי כאן מעדכן את המחשבון בלבד, ולא את הרישום באוניברסיטה.</p>
   </div>
 
   <p class="small muted">שמירה וחישוב אוטומטיים מופעלים לאחר השלמת הסכם, בחירת מו״ר והמסלול. מצב השמירה יופיע מיד מתחת לטופס.</p>
@@ -219,7 +235,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 <section class="card"><div id="stats"></div></section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 5.4: טבלת מסלול וציונים, תרשימים ושמירה אוטומטית; לא תחזית קבלה.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 5.5: סכם סופי משוער ומיקום בכל קבוצה, טבלת סקר ושמירה אוטומטית; לא תחזית קבלה.
 </footer>
 </div>
 
@@ -496,8 +512,8 @@ window.addEventListener('beforeunload',e=>{if(AUTH_VERIFIED&&(SAVING||DIRTY)){e.
 </script>
 <script src="auth-redirect.js?v=5.2.1"></script>
 <script src="survey-charts.js?v=5.4.0"></script>
-<script src="scenario-model.js?v=5.2"></script>
-<script src="scenario-ui.js?v=5.4.1"></script>
+<script src="scenario-model.js?v=5.5"></script>
+<script src="scenario-ui.js?v=5.5"></script>
 <script src="chart-updates.js?v=1"></script>
 </body>
 </html>
