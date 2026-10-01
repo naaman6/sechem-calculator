@@ -116,6 +116,8 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 .auth-card p{margin:4px 0}
 .auth-account{overflow-wrap:anywhere}
 .auth-card:focus{outline:2px solid var(--accent);outline-offset:3px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+fieldset:disabled{opacity:.55}
 .pill{display:inline-block;font-size:.8rem;padding:2px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
 .hidden{display:none !important}
 .adv label{font-weight:400;font-size:.95rem}
@@ -133,10 +135,11 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 
 <!-- ============ STEP 1: INPUTS ============ -->
 <section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
-  <h2 id="authTitle">התחברות לשמירה בלבד</h2>
-  <p class="small muted">אפשר לחשב ולקבל המלצה בלי להתחבר. התחברות עם Google נדרשת רק לשמירה לסקר, ורק לחיצה על „שמור את הנתונים שלי” תשלח את הציונים.</p>
+  <h2 id="authTitle">מתחברים עם Google, מחשבים ושומרים</h2>
+  <p class="small muted">התחברות נדרשת לשימוש במחשבון. לחיצה על „חשב ושמור את הציונים” שומרת אוטומטית את הסכם, המו״ר והמסלול במאגר הסקר, ומעדכנת את הרשומה של אותו חשבון במקום להוסיף כפילות. לא נשמרת כל הקלדה.</p>
+  <p class="small muted">המייל המאומת משמש להתאמה לטופס; המחשבון שומר מזהים פנימיים ולא מפרסם מיילים או שמות. תשובות היסטוריות ללא מזהה נשמרות בנפרד ולא נספרות במדגם המזוהה.</p>
   <div class="row2"><div id="gsiBtn"></div></div>
-  <p id="authStatus" class="small muted" role="status" aria-live="polite">טוען את אפשרות ההתחברות… אפשר להתחיל לחשב בינתיים.</p>
+  <p id="authStatus" class="small muted" role="status" aria-live="polite">טוען את אפשרות ההתחברות…</p>
   <p id="who" class="small auth-account hidden" aria-live="polite"></p>
   <div class="row2">
     <button type="button" id="authRetry" class="hidden">נסה שוב לטעון התחברות</button>
@@ -146,6 +149,8 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 
 <section class="card" id="inputs">
   <h2><span class="step">1</span> הנתונים שלך</h2>
+  <p class="small muted" id="inputGate">יש להתחבר עם Google לפני הזנת ציונים וקבלת המלצה.</p>
+  <fieldset id="inputFields" disabled aria-label="ציונים ומסלול">
 
   <div class="field">
     <label for="cog">סכם קוגניטיבי <span class="hint">המספר שמופיע באזור המועמדים של אריאל תחת "קבלה משולב – מחושב". סקאלה 200–800.</span></label>
@@ -172,7 +177,7 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
   </div>
   <div class="field" id="morField">
     <label for="mor">ציון מו"ר / מרק"ם כללי <span class="hint">סקאלה 150–250. ממוצע ארצי 200.</span></label>
-    <input type="number" id="mor" inputmode="numeric" min="151" max="250" step="1" placeholder="לדוגמה 205">
+    <input type="number" id="mor" inputmode="numeric" min="150" max="250" step="1" placeholder="לדוגמה 205">
     <div class="err" id="morErr"></div>
   </div>
 
@@ -187,17 +192,23 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
     <div class="err" id="trackErr"></div>
   </div>
 
-  <label class="check"><input type="checkbox" id="filledForm"> כבר מילאתי את טופס הסקר של הקבוצה (כדי שלא אספר פעמיים)</label>
-
   <div class="row2" style="margin-top:18px">
-    <button type="button" class="primary" id="go">הצג לי המלצה</button>
+    <button type="button" class="primary" id="go" disabled>חשב ושמור את הציונים</button>
   </div>
+  </fieldset>
+</section>
+
+<section class="card hidden" id="save" aria-labelledby="saveTitle">
+  <h2 id="saveTitle">מצב השמירה</h2>
+  <p id="saveMsg" class="small" role="status" aria-live="polite"></p>
+  <button type="button" id="submit" class="hidden" disabled>נסה שוב לשמור ולחשב</button>
 </section>
 
 <!-- ============ STEP 2: RECOMMENDATION ============ -->
 <section class="card hidden" id="result">
   <h2><span class="step">2</span> ההמלצה</h2>
   <div id="reco" class="reco N"><div class="k">ממתין לנתונים</div></div>
+  <div id="resultDetails">
 
   <h3 class="small muted" style="margin:18px 0 4px">איפה את/ה עומד/ת מול המועמדים שענו על הסקר</h3>
   <div class="pos" id="posA">
@@ -243,18 +254,6 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
       <div><label for="sdOv">סטיית תקן לשיטה ג׳ <span class="hint">ריק = מחושב מהסקר</span></label><input type="number" id="sdOv" step="0.1" placeholder="אוטומטי"></div>
     </div>
   </details>
-</section>
-
-<!-- ============ STEP 3: SAVE ============ -->
-<section class="card hidden" id="save">
-  <h2><span class="step">3</span> הוסף/י את הנתונים שלך לסקר</h2>
-  <p class="small muted" style="margin:0 0 10px">ככל שיותר מועמדים מזינים, ההמלצה לכולם מדויקת יותר. השמירה דורשת התחברות עם Google רק כדי שלכל אדם תהיה שורה אחת: אם תחזור/י ותעדכן/י, הנתונים הקודמים שלך יוחלפו ולא ייספרו פעמיים. <strong>לא נשמר שם ולא מייל</strong> – רק מזהה מוצפן, הציונים והמסלול.</p>
-  <div id="saveOff" class="note hidden">השמירה עדיין לא הופעלה על ידי מנהל הקבוצה. המחשבון עובד על עותק של נתוני הסקר מתאריך <bdi dir="ltr" id="snapDate"></bdi>.</div>
-  <div id="saveOn">
-    <p class="small muted" id="saveAuthHint">לשמירה יש להתחבר עם Google בראש העמוד.</p>
-    <button type="button" id="showAuth">מעבר להתחברות</button>
-    <div class="row2"><button type="button" class="primary" id="submit" disabled>שמור את הנתונים שלי</button></div>
-    <div id="saveMsg" class="small muted" style="margin-top:8px"></div>
   </div>
 </section>
 
@@ -262,7 +261,8 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 <section class="card">
   <h2>מה הסקר מראה עד כה</h2>
   <div class="stats" id="stats"></div>
-  <p class="small muted" style="margin:10px 0 0" id="dataSrc"></p>
+  <p class="small muted" style="margin:10px 0 0" id="dataSrc">נתוני הסקר ייטענו לאחר אימות ההתחברות.</p>
+  <p class="note hidden" id="dataCaveat"></p>
   <details>
     <summary>איך המחשבון חושב (הסבר להדיוטות)</summary>
     <div class="small">
@@ -277,7 +277,7 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
 </section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 2.0.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 3.0.
 </footer>
 </div>
 
@@ -287,17 +287,14 @@ footer{margin-top:28px;color:var(--faint);font-size:.85rem}
  *  CLIENT_ID – מזהה OAuth (Web application) מ-Google Cloud Console,
  *              עם Authorized JavaScript origin: https://naaman6.github.io
  *  API_URL   – כתובת ה-Web app של ה-Apps Script (ראו backend/Code.gs)
- * כל עוד הם ריקים, המחשבון עובד על עותק הנתונים המוטמע למטה.
+ * נדרש שרת API_VERSION 3. אין חישוב או שמירה לפני אימות בשרת.
  * ====================================================== */
 const CONFIG = {
   CLIENT_ID: '294846711314-uvs3679bbgdg8ju9kdidreehmon9vnc7.apps.googleusercontent.com',
   API_URL: 'https://script.google.com/macros/s/AKfycbzyLNKjQalzhjlh2cpcMvrw8M1CGA3TtDdxyZkv9VSAn-tkDXGHOhE5Eb-0vNEAtPTK/exec',
   SEATS: 80,
-  SNAPSHOT_DATE: '1.10.2026 10:10',
+  API_VERSION: 3,
 };
-
-/* עותק נתוני הסקר (גיבוי): [סכם קוגניטיבי, מו"ר או null, מסלול A/B/U/M] */
-const SNAPSHOT = [[750,null,"B"],[741,null,"B"],[755,null,"B"],[731,null,"B"],[741,null,"B"],[748,null,"M"],[727,null,"B"],[726,null,"B"],[749,174,"U"],[773,177,"A"],[737,180,"B"],[756,186,"U"],[732,187,"A"],[734,192,"U"],[757,192,"U"],[759,194,"A"],[749,195,"U"],[757,196,"A"],[771,197,"A"],[738,199,"B"],[740,204,"U"],[731,204,"A"],[759,207,"A"],[723,210,"A"],[749,211,"A"],[735,224,"A"],[711,231,"A"],[734,null,"B"],[751,200,"U"],[766,null,"B"],[760,173,"B"],[728,null,"B"],[759,185,"U"],[745,194,"U"],[739,null,"B"],[766,188,"A"],[745,null,"B"],[742,198,"U"],[750,195,"A"],[713,null,"B"],[752,null,"B"],[745,206,"A"],[751,199,"A"],[743,null,"B"],[732,null,"B"],[754,186,"U"],[746,null,"B"],[743,196,"U"],[745,null,"B"],[752,204,"A"],[749,null,"B"],[726,null,"B"]];
 
 /* ======================= DATA =======================*/
 const $=id=>document.getElementById(id);
@@ -305,43 +302,38 @@ const f1=n=>n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDig
 const f2=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct=n=>Math.round(n*100)+'%';
 
-function rowsFromSnapshot(){return SNAPSHOT.map(r=>({c:r[0],m:r[1],t:r[2]}));}
-let DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot',updated:CONFIG.SNAPSHOT_DATE};
-let MY_UID=null;
+let DATA={rows:[],counts:{identified:0,historical:0,unresolved:0,invalid:0},source:'locked',updated:''};
 let ID_TOKEN=null, LAST_RESULT=null;
 let AUTH_SUB=null, AUTH_LOADING=false, AUTH_ATTEMPT=0, AUTH_TIMER=null, SAVING=false;
-
-async function loadData(){
-  if(!CONFIG.API_URL){DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot',updated:CONFIG.SNAPSHOT_DATE};return;}
+let AUTH_VERIFIED=false, VERIFYING=false, SESSION_GENERATION=0;
+async function apiCall(action,payload={},token=ID_TOKEN){
+  if(!token)throw Object.assign(new Error('יש להתחבר עם Google.'),{code:'AUTH'});
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),12000);
+  const timeout=setTimeout(()=>controller.abort(),30000);
   try{
-    const r=await fetch(CONFIG.API_URL,{redirect:'follow',signal:controller.signal});
-    if(!r.ok) throw new Error('data unavailable');
+    const r=await fetch(CONFIG.API_URL,{method:'POST',redirect:'follow',signal:controller.signal,
+      body:JSON.stringify({...payload,apiVersion:CONFIG.API_VERSION,action,id_token:token})});
+    if(!r.ok)throw new Error('השרת אינו זמין כרגע.');
     const j=await r.json();
-    if(!j.ok||!Array.isArray(j.form)||!Array.isArray(j.calc)) throw new Error('bad data');
-    DATA={form:j.form,calc:j.calc,source:'live',updated:new Date(j.updated).toLocaleString('he-IL')};
+    if(j.apiVersion!==CONFIG.API_VERSION)throw new Error('עדכון השרת טרם הושלם. לא בוצעה שמירה בגרסה החדשה.');
+    if(!j.ok)throw Object.assign(new Error(j.error||'הבקשה נכשלה.'),{code:j.code});
+    if(!Array.isArray(j.rows)||!j.counts||!j.rows.every(x=>Number.isFinite(x.c)&&x.c>=200&&x.c<=800&&
+      (x.m===null||(Number.isFinite(x.m)&&x.m>=150&&x.m<=250))&&['A','B','U','M'].includes(x.t)&&typeof x.self==='boolean')){
+      throw new Error('השרת החזיר נתונים שאינם תקינים.');
+    }
+    return j;
   }catch(e){
-    console.warn('Live data unavailable; using the dated snapshot.');
-    DATA={form:rowsFromSnapshot(),calc:[],source:'snapshot-fallback',updated:CONFIG.SNAPSHOT_DATE};
-  }finally{
-    clearTimeout(timeout);
-  }
+    if(e.name==='AbortError')throw new Error(action==='save'?
+      'לא התקבל אישור בזמן. ייתכן שהנתונים נשמרו; ניסיון חוזר יעדכן את אותה רשומה.':'אימות ההתחברות התעכב. נסה/י להתחבר שוב.');
+    throw e;
+  }finally{clearTimeout(timeout);}
 }
-
-/* איחוד טופס + מחשבון, בלי כפילויות:
- * - השורה של המשתמש הנוכחי (לפי uid) מוסרת, כי הוא נוסף בנפרד.
- * - מי שסימן במחשבון "מילאתי גם את הטופס" מוחק שורת טופס אחת זהה (אותו סכם ואותו מו"ר). */
-function mergedPool(excludeSelfForm){
-  let form=DATA.form.map(r=>({...r}));
-  const calc=[];
-  for(const r of DATA.calc){
-    if(MY_UID && r.uid===MY_UID) continue;
-    if(r.f){const i=form.findIndex(x=>x.c===r.c && (x.m||null)===(r.m||null)); if(i>=0) form.splice(i,1);}
-    calc.push({c:r.c,m:r.m,t:r.t});
-  }
-  if(excludeSelfForm){const i=form.findIndex(x=>x.c===excludeSelfForm.c && (x.m||null)===(excludeSelfForm.m||null)); if(i>=0) form.splice(i,1);}
-  return form.concat(calc);
+function applyData(j){
+  DATA={rows:j.rows,counts:j.counts,source:'live',updated:new Date(j.updated).toLocaleString('he-IL')};
+}
+function mergedPool(){
+  // Server has already merged identities. Never guess identity from equal scores.
+  return DATA.rows.filter(r=>!r.self).map(r=>({c:r.c,m:r.m,t:r.t}));
 }
 
 /* ======================= MODEL =======================*/
@@ -405,7 +397,7 @@ function simulateB(me,groupB,params,method,sims){
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 
 function analyze(me){
-  const pool=mergedPool(me.filledForm?{c:me.c,m:me.m}:null);
+  const pool=mergedPool();
   const cogs=pool.map(r=>r.c);
   const ms=meanSd(cogs);
   const muOv=parseFloat($('muOv').value), sdOv=parseFloat($('sdOv').value);
@@ -493,12 +485,12 @@ function readMe(){
   let ok=true;
   const cOk=!isNaN(c)&&c>=200&&c<=800; $('cog').classList.toggle('bad',!cOk); $('cogErr').textContent=cOk?'':'הזן/י סכם בין 200 ל-800'; ok&&=cOk;
   if(!hasMor){ok=false;$('morErr').textContent='סמן/י אם יש לך ציון מו"ר';}
-  else if(hasMor.value==='1'){const mOk=!isNaN(m)&&m>=151&&m<=250;$('mor').classList.toggle('bad',!mOk);$('morErr').textContent=mOk?'':'הזן/י ציון בין 151 ל-250';ok&&=mOk;}
+  else if(hasMor.value==='1'){const mOk=!isNaN(m)&&m>=150&&m<=250;$('mor').classList.toggle('bad',!mOk);$('morErr').textContent=mOk?'':'הזן/י ציון בין 150 ל-250';ok&&=mOk;}
   else $('morErr').textContent='';
   $('trackErr').textContent=tr?'':'שדה חובה';
   ok&&=!!tr;
   if(!ok)return null;
-  return{c,m:hasMor.value==='1'?m:null,t:tr.value,filledForm:$('filledForm').checked};
+  return{c,m:hasMor.value==='1'?m:null,t:tr.value};
 }
 
 function setBar(id,frac,cutFrac,color){
@@ -558,80 +550,136 @@ function render(me,an){
 }
 
 function renderStats(){
-  const pool=mergedPool(null);
+  if(!AUTH_VERIFIED||DATA.source!=='live'){
+    $('stats').replaceChildren();
+    $('dataSrc').textContent='נתוני הסקר ייטענו לאחר אימות ההתחברות בשרת.';
+    $('dataCaveat').classList.add('hidden');
+    return;
+  }
+  const pool=DATA.rows;
   const ms=meanSd(pool.map(r=>r.c));
   const mors=pool.filter(r=>r.m!=null).map(r=>r.m).sort((a,b)=>a-b);
   const med=mors.length?mors[Math.floor(mors.length/2)]:NaN;
   const cnt=t=>pool.filter(r=>r.t===t).length;
   $('stats').innerHTML=[
-    [pool.length,'משיבים'],[cnt('A'),'בחרו מכסה א׳'],[cnt('B'),'בחרו מכסה ב׳'],[cnt('U'),'לא בטוחים'],
+    [pool.length,'רשומות מזוהות, ללא כפילות בין המקורות'],[cnt('A'),'בחרו מכסה א׳'],[cnt('B'),'בחרו מכסה ב׳'],[cnt('U'),'לא בטוחים'],
     [isNaN(ms.mu)?'—':f1(ms.mu),'ממוצע סכם קוגניטיבי'],[isNaN(ms.sd)?'—':f1(ms.sd),'סטיית תקן'],[isNaN(med)?'—':med,'חציון מו"ר (למי שיש)'],
   ].map(([n,t])=>`<div class="stat"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
-  $('dataSrc').innerHTML=DATA.source==='live'
-    ?`נתונים חיים מהסקר ומהמחשבון, עודכנו <bdi dir="ltr">${DATA.updated}</bdi>. <a href="https://docs.google.com/forms/d/e/1FAIpQLScdzMV28eoLXkvog9Ym8R5P9-e9Vv1IB3jNOYE9Hqn28zCmjw/viewform" target="_blank" rel="noopener">לטופס הסקר</a>`
-    :`עותק של נתוני הסקר מתאריך <bdi dir="ltr">${DATA.updated}</bdi>. <a href="https://docs.google.com/forms/d/e/1FAIpQLScdzMV28eoLXkvog9Ym8R5P9-e9Vv1IB3jNOYE9Hqn28zCmjw/viewform" target="_blank" rel="noopener">לטופס הסקר</a>`;
-  $('snapDate').textContent=DATA.updated;
+  $('dataSrc').textContent=`נתונים חיים מהמאגר המאוחד, עודכנו ${DATA.updated}. הרשומה של החשבון הנוכחי אינה נספרת כמתחרה נוסף.`;
+  const n=x=>Number.isFinite(Number(x))?Math.max(0,Math.floor(Number(x))):0;
+  $('dataCaveat').textContent=`${n(DATA.counts.historical)} תשובות היסטוריות ללא מזהה נשמרו אך אינן נכללות בחישוב. ${n(DATA.counts.unresolved)} תשובות נוספות ממתינות להתאמת זהות, ו-${n(DATA.counts.invalid)} רשומות לא תקינות אינן נכללות. ${pool.length<20?'המדגם המזוהה כרגע קטן; אין לפרש דירוג כהסתברות קבלה אמיתית.':'זהו סקר התנדבותי, לא מדגם מייצג.'}`;
+  $('dataCaveat').classList.remove('hidden');
+}
+function renderRecommendation(me){
+  if(!AUTH_VERIFIED)return;
+  const pool=mergedPool();
+  const ms=meanSd(pool.filter(x=>x.t!=='M').map(x=>x.c));
+  const insufficient=!Number.isFinite(ms.sd)||ms.sd<=0;
+  const an=insufficient?null:analyze(me);
+  if(insufficient||!an.A.length||!an.B.length){
+    LAST_RESULT=null;
+    $('result').classList.remove('hidden');
+    $('resultDetails').classList.add('hidden');
+    $('reco').className='reco N';
+    $('reco').textContent='הציונים נשמרו. עדיין אין מספיק נתונים מזוהים בני־השוואה בשתי המכסות כדי לתת המלצה מבוססת. תשובות אנונימיות ישנות אינן מתווספות למדגם באופן שעלול לספור את אותו אדם פעמיים.';
+    return;
+  }
+  $('resultDetails').classList.remove('hidden');
+  render(me,an);
 }
 
 /* ======================= GOOGLE SIGN-IN & SAVE =======================*/
 function decodeJwt(t){try{return JSON.parse(decodeURIComponent(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}catch(e){return{};}}
 function syncAuthUi(){
-  const signedIn=!!ID_TOKEN;
+  const signedIn=AUTH_VERIFIED&&!!ID_TOKEN;
+  $('inputFields').disabled=!signedIn||SAVING;
+  $('go').disabled=!signedIn||SAVING;
+  $('go').textContent=SAVING?'שומר ומחשב…':'חשב ושמור את הציונים';
   $('submit').disabled=!signedIn||SAVING;
   $('signOut').disabled=SAVING;
-  $('signOut').classList.toggle('hidden',!signedIn);
+  $('signOut').classList.toggle('hidden',!signedIn&&!VERIFYING);
   $('who').classList.toggle('hidden',!signedIn);
-  $('gsiBtn').classList.toggle('hidden',signedIn);
-  $('showAuth').classList.toggle('hidden',signedIn);
-  $('saveAuthHint').textContent=signedIn?'מחובר/ת. הנתונים יישלחו רק בלחיצה על כפתור השמירה.':'לשמירה יש להתחבר עם Google בראש העמוד.';
+  $('gsiBtn').classList.toggle('hidden',signedIn||VERIFYING);
+  $('inputGate').textContent=signedIn?'הציונים יישמרו אוטומטית עם החישוב. שינוי נוסף יעדכן את אותה רשומה.':
+    VERIFYING?'מאמת את החשבון וטוען נתונים מהשרת…':'יש להתחבר עם Google לפני הזנת ציונים וקבלת המלצה.';
+}
+function resetScores(){
+  ['cog','mor','bag','psy'].forEach(id=>{$(id).value='';$(id).classList.remove('bad');});
+  document.querySelectorAll('#inputFields input[type=radio]').forEach(x=>x.checked=false);
+  ['cogErr','morErr','trackErr','helperErr'].forEach(id=>$(id).textContent='');
+  $('morField').classList.remove('hidden');
 }
 function clearAuth(message){
   clearTimeout(AUTH_TIMER);
-  ID_TOKEN=null; AUTH_SUB=null; MY_UID=null;
+  SESSION_GENERATION++;
+  ID_TOKEN=null; AUTH_SUB=null; AUTH_VERIFIED=false; VERIFYING=false; LAST_RESULT=null;
+  DATA={rows:[],counts:{},source:'locked',updated:''};
   $('who').textContent='';
   $('saveMsg').textContent='';
-  $('authStatus').textContent=message||'יצאת מהמחשבון. אפשר להמשיך לחשב בלי להתחבר, או לבחור חשבון לשמירה.';
+  $('save').classList.add('hidden'); $('result').classList.add('hidden');
+  $('authStatus').textContent=message||'יצאת מהמחשבון. יש להתחבר מחדש כדי לחשב ולשמור.';
   window.google?.accounts?.id?.disableAutoSelect();
+  resetScores();
   syncAuthUi();
   renderStats();
-  if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));
 }
-function receiveCredential(resp){
-  if(SAVING)return;
+async function receiveCredential(resp){
+  if(SAVING||VERIFYING)return;
   const p=decodeJwt(resp.credential||'');
   const remaining=Number(p.exp)*1000-Date.now();
   if(!p.sub||!Number.isFinite(remaining)||remaining<=0){
     clearAuth('ההתחברות לא הושלמה או פגה. יש לבחור שוב חשבון Google.');
     return;
   }
-  if(AUTH_SUB!==p.sub)MY_UID=null;
-  AUTH_SUB=p.sub; ID_TOKEN=resp.credential;
-  clearTimeout(AUTH_TIMER);
-  AUTH_TIMER=setTimeout(()=>clearAuth('תוקף ההתחברות פג. אפשר להמשיך לחשב; לשמירה יש להתחבר שוב.'),Math.min(remaining,2147483647));
-  $('who').textContent=`מחובר/ת: ${p.name||p.given_name||'חשבון Google'}${p.email?' · '+p.email:''}`;
-  $('authStatus').textContent='החשבון נבחר. התחברות לבדה אינה שולחת את הציונים לסקר.';
-  $('authRetry').classList.add('hidden');
-  $('saveMsg').textContent='';
+  const generation=++SESSION_GENERATION;
+  const token=resp.credential;
+  ID_TOKEN=token; AUTH_VERIFIED=false; VERIFYING=true;
+  $('authStatus').textContent='מאמת את החשבון מול השרת וטוען את נתוני הסקר…';
   syncAuthUi();
-  renderStats();
-  if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));
+  try{
+    const j=await apiCall('session',{},token);
+    if(generation!==SESSION_GENERATION)return;
+    if(Number(p.exp)*1000<=Date.now())throw new Error('תוקף ההתחברות פג. יש להתחבר מחדש.');
+    AUTH_SUB=p.sub; AUTH_VERIFIED=true; VERIFYING=false;
+    applyData(j);
+    resetScores();
+    const own=DATA.rows.find(x=>x.self);
+    if(own){
+      $('cog').value=own.c; $('mor').value=own.m===null?'':own.m;
+      $(own.m===null?'hasMorN':'hasMorY').checked=true;
+      $('morField').classList.toggle('hidden',own.m===null);
+      $('tr'+own.t).checked=true;
+    }
+    $('who').textContent=`מחובר/ת: ${p.name||p.given_name||'חשבון Google'}${p.email?' · '+p.email:''}`;
+    $('authStatus').textContent=j.identityNotice||
+      'החשבון אומת. הזינו ציונים ולחצו „חשב ושמור את הציונים”; הרשומה הקיימת תתעדכן אוטומטית.';
+    $('authRetry').classList.add('hidden');
+    $('saveMsg').textContent='';
+    syncAuthUi();renderStats();
+  }catch(e){
+    if(generation!==SESSION_GENERATION)return;
+    clearAuth('לא ניתן להשלים את ההתחברות: '+e.message);
+    return;
+  }
+  clearTimeout(AUTH_TIMER);
+  AUTH_TIMER=setTimeout(()=>clearAuth('תוקף ההתחברות פג. יש להתחבר מחדש לפני חישוב ושמירה.'),
+    Math.min(Number(p.exp)*1000-Date.now(),2147483647));
 }
 function initAuth(){
-  if(AUTH_LOADING||ID_TOKEN)return;
+  if(AUTH_LOADING||ID_TOKEN||VERIFYING)return;
   if(!CONFIG.CLIENT_ID||!CONFIG.API_URL){
-    $('saveOff').classList.remove('hidden');$('saveOn').classList.add('hidden');
-    $('authStatus').textContent='שמירה אינה מוגדרת כרגע. החישוב זמין בלי התחברות.';
+    $('authStatus').textContent='ההתחברות לשרת טרם הוגדרה. החישוב אינו זמין כרגע.';
     return;
   }
   AUTH_LOADING=true;
   const attempt=++AUTH_ATTEMPT;
   $('authRetry').classList.add('hidden');
-  $('authStatus').textContent='טוען את אפשרות ההתחברות… אפשר להתחיל לחשב בינתיים.';
+  $('authStatus').textContent='טוען את אפשרות ההתחברות…';
   let timer;
   const fail=()=>{
     if(attempt!==AUTH_ATTEMPT)return;
     clearTimeout(timer); AUTH_LOADING=false;
-    $('authStatus').textContent='אפשרות ההתחברות לא נטענה. אפשר לחשב כרגיל; לשמירה נסה/י שוב או בדוק/י אם הדפדפן חוסם את שירות Google.';
+    $('authStatus').textContent='אפשרות ההתחברות לא נטענה. נסה/י שוב או בדוק/י אם הדפדפן חוסם את שירות Google. אין חישוב או שמירה ללא התחברות.';
     $('authRetry').classList.remove('hidden');
   };
   const ready=()=>{
@@ -641,7 +689,7 @@ function initAuth(){
       google.accounts.id.initialize({client_id:CONFIG.CLIENT_ID,callback:receiveCredential,auto_select:false,itp_support:true});
       $('gsiBtn').replaceChildren();
       google.accounts.id.renderButton($('gsiBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'he',shape:'pill',width:240});
-      $('authStatus').textContent='לא מחובר/ת. אפשר לחשב כרגיל; לשמירה בחר/י חשבון בכפתור Google.';
+      $('authStatus').textContent='יש להתחבר עם Google כדי לחשב ולשמור את הציונים בסקר.';
       $('authRetry').classList.add('hidden');
       syncAuthUi();
     }catch(e){fail();}
@@ -655,22 +703,28 @@ function initAuth(){
 }
 async function submitMe(){
   if(SAVING)return;
-  if(!LAST_RESULT){$('saveMsg').textContent='קודם לחצ/י "הצג לי המלצה".';return;}
-  if(!ID_TOKEN){$('saveMsg').textContent='יש להתחבר עם Google.';return;}
+  if(!AUTH_VERIFIED||!ID_TOKEN){$('auth').focus();return;}
+  const me=readMe();
+  if(!me)return;
   const requestToken=ID_TOKEN;
-  const me=LAST_RESULT.me; SAVING=true; syncAuthUi(); $('saveMsg').textContent='שומר…';
+  SAVING=true; syncAuthUi();
+  $('save').classList.remove('hidden');$('submit').classList.add('hidden');
+  $('result').classList.add('hidden'); LAST_RESULT=null;
+  $('saveMsg').textContent='שומר את הציונים לחשבון המחובר ומרענן את המאגר…';
   try{
-    const r=await fetch(CONFIG.API_URL,{method:'POST',redirect:'follow',body:JSON.stringify({id_token:requestToken,cog:me.c,mor:me.m,track:me.t,filledForm:me.filledForm})});
-    const j=await r.json();
-    if(!j.ok)throw new Error(j.error||'שגיאה');
+    const j=await apiCall('save',{cog:me.c,mor:me.m,track:me.t},requestToken);
+    if(!j.saved||typeof j.saved.changed!=='boolean')throw new Error('לא התקבל אישור שמירה תקין.');
     if(ID_TOKEN!==requestToken)return;
-    MY_UID=j.uid;
-    $('saveMsg').innerHTML='<span class="ok" style="display:block">נשמר. אם תחזור/י ותשנה/י נתונים, השורה שלך תתעדכן ולא תיספר פעמיים.</span>';
-    await loadData(); renderStats(); render(me,analyze(me));
+    applyData(j);
+    $('saveMsg').textContent=j.saved.changed?'הציונים נשמרו אוטומטית. לחשבון הזה יש רשומת מחשבון אחת במאגר המאוחד.':
+      'הנתונים כבר מעודכנים. לא נוספה רשומה כפולה.';
+    renderStats();renderRecommendation(me);
+    $('save').scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){
     if(ID_TOKEN!==requestToken)return;
-    if(/אסימון/.test(e.message))clearAuth('תוקף ההתחברות אינו תקין. לשמירה יש להתחבר שוב.');
-    $('saveMsg').textContent='השמירה נכשלה: '+e.message+(/אסימון/.test(e.message)?' (התחבר/י שוב)':'');
+    if(e.code==='AUTH'){clearAuth(e.message);return;}
+    $('saveMsg').textContent='לא התקבל אישור שמירה: '+e.message;
+    $('submit').classList.remove('hidden');
   }finally{SAVING=false; syncAuthUi();}
 }
 
@@ -681,17 +735,23 @@ $('useCog').addEventListener('click',()=>{
   if(isNaN(b)||isNaN(p)||b<0||b>130||p<200||p>800){$('helperErr').textContent='הזן/י ממוצע בגרות (0–130) ופסיכומטרי (200–800)';return;}
   $('helperErr').textContent=''; $('cog').value=((6.666*b+p)/2).toFixed(2);
 });
-$('go').addEventListener('click',()=>{const me=readMe(); if(!me)return; render(me,analyze(me)); $('result').scrollIntoView({behavior:'smooth',block:'start'});});
+$('go').addEventListener('click',submitMe);
 ['rCorr','muOv','sdOv'].forEach(id=>$(id).addEventListener('input',()=>{$('rCorrV').textContent=$('rCorr').value; if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
 document.querySelectorAll('input[name=undec]').forEach(r=>r.addEventListener('change',()=>{if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
 $('submit').addEventListener('click',submitMe);
-$('showAuth').addEventListener('click',()=>{$('auth').scrollIntoView({behavior:'smooth',block:'start'});$('auth').focus({preventScroll:true});});
 $('authRetry').addEventListener('click',initAuth);
 $('signOut').addEventListener('click',()=>{if(!SAVING)clearAuth();});
+$('inputFields').addEventListener('input',()=>{
+  if(!AUTH_VERIFIED||SAVING)return;
+  LAST_RESULT=null;$('result').classList.add('hidden');
+  $('save').classList.remove('hidden');
+  $('saveMsg').textContent='הנתונים נערכו. הם יישמרו עם הלחיצה הבאה על „חשב ושמור את הציונים”.';
+  $('submit').classList.add('hidden');
+});
 
+syncAuthUi();
 initAuth();
 renderStats();
-(async()=>{await loadData(); renderStats(); if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));})();
 </script>
 </body>
 </html>
