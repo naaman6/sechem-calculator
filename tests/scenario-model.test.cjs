@@ -43,7 +43,7 @@ test('changing distribution changes outcomes, not merely labels',()=>{
   assert.notEqual(base.internal.lo,other.internal.lo);
   assert.notEqual(base.thresholdMedian,other.thresholdMedian);
 });
-const robust={aFraction:.8,bFraction:.1,aPeers:20,bPeers:30,benefitShare:.9,lossShare:.02};
+const robust={aFraction:.8,bFraction:.1,aPeers:20,bPeers:30,benefitShare:.9,lossShare:.02,conditionalGrade:210};
 test('all scenarios, not a majority, must pass conservative switch rule',()=>{
   assert.equal(M.switchRecommendation([robust,robust]).choice,'B');
   assert.equal(M.switchRecommendation([robust,{...robust,benefitShare:.69}]).choice,'A');
@@ -71,7 +71,33 @@ test('threshold for an empty B group is not fabricated',()=>{
   const x=M.switchRun(me,[{...me}],p);
   assert.equal(x.thresholdMedian,null);assert.equal(x.bFraction,null);
 });
-console.log(`${passed} v5 checks passed`);
+test('published conditional grade actually meets the same gain and loss rule when obtained',()=>{
+  for(const method of M.methods)for(const allocation of ['exclude','A','B'])for(const r of [0,.6,.9]){
+    const params={...p,r,undecided:allocation};
+    const baseline=M.switchRun(me,rows,params,method.id);
+    if(!Number.isFinite(baseline.conditionalGrade))continue;
+    const fixed=M.switchRun(me,rows,params,method.id,1000,Math.ceil(baseline.conditionalGrade));
+    assert(fixed.benefitShare>=M.switchPolicy.minBenefitShare-1e-12,method.id+' gain');
+    assert(fixed.lossShare<=M.switchPolicy.maxLossShare+1e-12,method.id+' loss');
+  }
+});
+test('perfect A position cannot improve by five percentage points, regardless of B grade',()=>{
+  const best={c:800,m:250,t:'A'};
+  const x=M.switchRun(best,rows,p,'B');
+  assert.equal(x.aFraction,0);
+  assert.equal(x.conditionalGrade,Infinity);
+});
+test('fixed grade cannot silently exceed the modeled score scale',()=>{
+  assert.throws(()=>M.switchRun(me,rows,p,'B',1000,251));
+});
+test('a tie at maximum grade cannot be treated as strictly better than the peer',()=>{
+  for(const method of M.methods){
+    const top=M.score(me.c,250,p,method.id);
+    assert.equal(M.threshold(me.c,0,[top],p,method.id),Infinity);
+    assert.equal(M.threshold(me.c,.5,[top],p,method.id),250);
+  }
+});
+console.log(`${passed} v5.1 checks passed`);
 if(process.argv.includes('--bench')){
   const start=Date.now();const runs=[];
   for(const m of M.methods)for(const allocation of ['exclude','A','B'])for(const profile of M.profiles)

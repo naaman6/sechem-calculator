@@ -44,7 +44,7 @@ let ANALYSIS_JOB=0;
 function thresholdLabel(value){
   if(value===null)return 'אין קבוצה';
   if(!Number.isFinite(value))return 'מעל 250';
-  if(value<=150)return 'עד 150';
+  if(value<=150)return '150';
   return String(Math.ceil(value));
 }
 async function renderRecommendation(me){
@@ -86,11 +86,9 @@ async function renderRecommendation(me){
       const baseline=methodRuns.filter(x=>x.allocation==='exclude'&&x.profile==='base');
       const bMean=baseline.reduce((s,x)=>s+x.ownB.mean,0)/baseline.length;
       if(hasMor){
-        const thresholds=methodRuns.map(x=>x.thresholdMedian).filter(x=>x!==null);
-        const lo=thresholds.length?Math.min(...thresholds):null,hi=thresholds.length?Math.max(...thresholds):null;
-        const thresholdText=lo===null?'אין קבוצת השוואה':lo===hi?thresholdLabel(lo):
-          `<bdi dir="ltr">${thresholdLabel(lo)} – ${thresholdLabel(hi)}</bdi>`;
-        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(baseline[0].ownA)}</td><td class="num">${f1(bMean)}</td><td>${thresholdText}</td></tr>`);
+        const conditions=methodRuns.map(x=>x.conditionalGrade).filter(x=>x!==null);
+        const condition=conditions.length?Math.max(...conditions):null;
+        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(baseline[0].ownA)}</td><td class="num">${f1(bMean)}</td><td>${thresholdLabel(condition)}</td></tr>`);
       }else{
         rows.push(`<tr><td>${method.name}</td><td class="num">${f1(bMean)}</td></tr>`);
       }
@@ -109,12 +107,18 @@ async function renderRecommendation(me){
       why='חסרים נתונים או שאין מספיק רשומות להשוואה מלאה. שמירת הציון הידוע היא ברירת מחדל זהירה, לא הוכחה שמכסה א׳ עדיפה.';
     }else{
       title='כרגע: להישאר עם המו״ר במכסה א׳';
-      why='המעבר לב׳ לא עבר את כלל הזהירות בכל בדיקות ההתפלגות והמתלבטים. מעבר עשוי להשתלם בתנאים מסוימים; ציון האיזון בטבלה מראה מה תצטרך להשיג, אך אינו ציון שהוכח שתוכל לקבל.';
+      why='הנתונים אינם מצדיקים להניח מראש שתשיג את הציון הנדרש למעבר, ולכן ברירת המחדל הזהירה היא לשמור על המו״ר.';
+    }
+    let conditionText='';
+    if(hasMor&&decision.conditionalGrade!==undefined){
+      conditionText=Number.isFinite(decision.conditionalGrade)?
+        `<p style="margin:10px 0 0"><strong>מתי ב׳ הייתה עדיפה לפי כלל המודל? אם תקבל במיון הפנימי ${thresholdLabel(decision.conditionalGrade)} ומעלה.</strong> זהו תנאי בדיעבד: לפני המיון אין לנו אומדן מאומת שתשיג אותו. זה לא סף קבלה לאוניברסיטה.</p>`:
+        '<p style="margin:10px 0 0"><strong>לא נמצא ציון פנימי עד 250 שעובר את כלל המעבר בכל התרחישים.</strong> זו מגבלה של כלל הזהירות שבמודל, לא הוכחה שאי אפשר להתקבל בב׳.</p>';
     }
     $('scenarioOutput').innerHTML=`
-      <div class="info"><h3 style="margin:0 0 8px">${title}</h3><p style="margin:0">${why}</p></div>
-      <div class="table-scroll compact-scores ${hasMor?'switch-scores':''}"><table><thead><tr><th>שיטה</th>${hasMor?'<th>סכם בא׳</th>':''}<th>סכם משוער בב׳</th>${hasMor?'<th>פנימי לאיזון עם א׳*</th>':''}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
-      ${hasMor?'<p class="small muted">* טווח ציוני האיזון בין התרחישים, לא טווח הציון הצפוי שלך ולא סף קבלה. בכל תרחיש זהו חציון הציון הדרוש לשוויון בדירוג היחסי מול א׳. ציון ב׳ מוצג בתרחיש הבסיס.</p><p class="small muted">המתלבטים נבדקו בנפרד, בעלי מו״ר בא׳ והיתר בב׳, וכולם בב׳. אלה תרחישי קצה, לא כל החלוקות האפשריות.</p>':'<p class="small muted">ציון ב׳ הוא ממוצע מדומה בהנחת התפלגות בסיס, לא ציון שנמדד. ציונים משיטות שונות אינם באותו סולם.</p>'}
+      <div class="info"><h3 style="margin:0 0 8px">${title}</h3><p style="margin:0">${why}</p>${conditionText}</div>
+      <div class="table-scroll compact-scores ${hasMor?'switch-scores':''}"><table><thead><tr><th>שיטה</th>${hasMor?'<th>סכם בא׳</th>':''}<th>סכם משוער בב׳</th>${hasMor?'<th>פנימי נדרש למעבר*</th>':''}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
+      ${hasMor?'<p class="small muted">* ציון פנימי מותנה לכל שיטה, לאחר בדיקות ההתפלגות והמתלבטים. התנאי הראשי משתמש בדרישה הגבוהה מבין השיטות. זה אינו הציון הצפוי שלך; ציון ב׳ בעמודה הקודמת הוא סכם בתרחיש בסיס, בסולם אחר.</p>':'<p class="small muted">ציון ב׳ הוא ממוצע מדומה בהנחת התפלגות בסיס, לא ציון שנמדד. ציונים משיטות שונות אינם באותו סולם.</p>'}
       <p class="note small"><strong>ההמלצה עלולה להיות שגויה.</strong> הסקר אינו מייצג וייתכנו כפילויות. נבדקו התפלגויות אפשריות, לא התפלגות מאומתת של אריאל; גם כלל הזהירות אינו סף מדעי מוכח. <a href="https://github.com/naaman6/sechem-calculator/blob/main/README.md#כלל-ההחלטה" target="_blank" rel="noopener">הנחות וכלל ההחלטה</a></p>`;
     LAST_RESULT={me,analysis:{decision,runs:allRuns}};
   }catch(e){if(current())$('scenarioOutput').textContent=e.message;}

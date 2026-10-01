@@ -115,22 +115,31 @@ const ScenarioModel = (() => {
   // Peer-relative position is the fraction above the user, not a population percentile.
   function threshold(c,aFraction,otherScores,p,method){
     if(!otherScores.length||aFraction===null)return null;
+    if(aFraction<0)return Infinity;
     const allowedAbove=Math.floor(aFraction*otherScores.length+1e-10);
     if(allowedAbove>=otherScores.length)return 150;
     const descending=[...otherScores].sort((x,y)=>y-x);
-    return inverseScore(c,descending[allowedAbove],p,method);
+    const target=descending[allowedAbove];
+    const candidate=inverseScore(c,target,p,method);
+    if(!Number.isFinite(candidate))return candidate;
+    if((rank(score(c,candidate,p,method),otherScores)-1)/otherScores.length<=aFraction+1e-12)return candidate;
+    // If matching the boundary leaves a tie outside the target rank, it must be
+    // exceeded. At the upper scale boundary this can make the target unreachable.
+    return inverseScore(c,target+1e-8,p,method);
   }
-  function switchRun(me,rows,p,method='C',sims=1000){
+  function switchRun(me,rows,p,method='C',sims=1000,fixedGrade=null){
     if(!Number.isInteger(sims)||sims<100)throw new Error('נדרשות לפחות 100 הגרלות.');
+    if(fixedGrade!==null&&(!Number.isFinite(fixedGrade)||fixedGrade<150||fixedGrade>250))throw new Error('ציון פנימי קבוע חייב להיות 150–250.');
     if(method==='C'&&!(Number.isFinite(p.sd)&&p.sd>0&&Number.isFinite(p.mu)))throw new Error('אין פיזור קוגניטיבי מספיק לתקנון.');
     const {A,B,excluded}=groups(rows,p.undecided);
     const ownA=me.m==null?null:score(me.c,me.m,p,method);
     const aRank=ownA==null||!A.length?null:rank(ownA,A.map(x=>score(x.c,x.m,p,method)));
     const aFraction=aRank==null?null:(aRank-1)/A.length;
-    const random=rng(),thresholds=[],ownFinal=[],ownInternal=[],bFractions=[];
+    const random=rng(),thresholds=[],gainThresholds=[],safeThresholds=[],ownFinal=[],ownInternal=[],bFractions=[];
     let benefits=0,losses=0,atLeastEqual=0;
     for(let i=0;i<sims;i++){
-      const internalMe=internal(me.m,p,random),finalMe=score(me.c,internalMe,p,method);
+      const sampled=internal(me.m,p,random);
+      const internalMe=fixedGrade===null?sampled:fixedGrade,finalMe=score(me.c,internalMe,p,method);
       const scores=B.map(x=>score(x.c,internal(x.m,p,random),p,method));
       ownInternal.push(internalMe);ownFinal.push(finalMe);
       if(B.length){
@@ -141,6 +150,9 @@ const ScenarioModel = (() => {
           if(gain<=-switchPolicy.minGain)losses++;
           if(gain>=0)atLeastEqual++;
           thresholds.push(threshold(me.c,aFraction,scores,p,method));
+          gainThresholds.push(threshold(me.c,aFraction-switchPolicy.minGain,scores,p,method));
+          // Loss includes equality, so the safe rank must be strictly below the loss boundary.
+          safeThresholds.push(threshold(me.c,aFraction+switchPolicy.minGain-1e-7,scores,p,method));
         }
       }
     }
@@ -151,6 +163,12 @@ const ScenarioModel = (() => {
       thresholdMedian:thresholds.length?empiricalQuantile(thresholds,.5):null,
       thresholdP90:thresholds.length?empiricalQuantile(thresholds,.9):null,
       thresholdImpossibleShare:thresholds.length?thresholds.filter(x=>!Number.isFinite(x)).length/sims:null,
+      // Counterfactual: if this internal grade were KNOWN, at least 70% of simulated
+      // peer cohorts improve rank and at least 90% avoid material deterioration.
+      // It does NOT estimate the user's probability of obtaining that grade.
+      conditionalGrade:gainThresholds.length?Math.max(
+        empiricalQuantile(gainThresholds,switchPolicy.minBenefitShare),
+        empiricalQuantile(safeThresholds,1-switchPolicy.maxLossShare)):null,
       benefitShare:aFraction!==null&&B.length?benefits/sims:null,
       lossShare:aFraction!==null&&B.length?losses/sims:null,
       atLeastEqualShare:aFraction!==null&&B.length?atLeastEqual/sims:null,sims};
@@ -165,6 +183,7 @@ const ScenarioModel = (() => {
       return {choice:'A',reason:'limited'};
     const robust=runs.every(x=>x.benefitShare>=switchPolicy.minBenefitShare&&x.lossShare<=switchPolicy.maxLossShare);
     return {choice:robust?'B':'A',reason:robust?'robust':'notRobust',
+      conditionalGrade:Math.max(...runs.map(x=>x.conditionalGrade)),
       minBenefitShare:Math.min(...runs.map(x=>x.benefitShare)),
       maxLossShare:Math.max(...runs.map(x=>x.lossShare))};
   }
