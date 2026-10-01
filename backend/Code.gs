@@ -20,7 +20,7 @@ const CONFIG = {
   FORM_ID: '1zJFk-Yvxe-lA_lkIiRISQSKJZheKpd_RWLz0ZZGb7bU',
   FORM_SHEET: 'תגובות לטופס 1',
   CALC_SHEET: 'מחשבון',
-  CLIENT_ID: 'PASTE_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com',
+  CLIENT_ID: '294846711314-uvs3679bbgdg8ju9kdidreehmon9vnc7.apps.googleusercontent.com',
   SALT: 'CHANGE_ME_TO_A_LONG_RANDOM_STRING',
 };
 
