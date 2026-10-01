@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
 <title>מחשבון סכם סופי משוער · תרחישי מיון לרפואה באריאל</title>
 <meta name="description" content="מחשבון לא רשמי למועמדי המסלול השש-שנתי לרפואה באריאל: מזינים סכם קוגניטיבי ומו&quot;ר, והמחשבון מחשב לפי שלוש שיטות, משווה לנתוני המועמדים בסקר, ואומר בשפה פשוטה באיזו מכסה עדיף להתמיין ולמה.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f5c55'/%3E%3Cpath d='M9 22V10m7 12V14m7 8V7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -148,7 +149,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 <!-- ============ STEP 1: INPUTS ============ -->
 <section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
   <h2 id="authTitle">מתחברים עם Google, מחשבים ושומרים</h2>
-  <p class="small muted">התחברות נדרשת לשימוש במחשבון. לחיצה על „חשב ושמור את הציונים” שומרת אוטומטית את הסכם, המו״ר והמסלול במאגר הסקר, ומעדכנת את הרשומה של אותו חשבון במקום להוסיף כפילות. לא נשמרת כל הקלדה.</p>
+  <p class="small muted">התחברות נדרשת לשימוש במחשבון. לאחר מילוי השדות, הציונים והמסלול נשמרים וההמלצה מחושבת אוטומטית, ללא כפתור שליחה. כל שינוי תקין מעדכן את הרשומה של אותו חשבון במקום להוסיף כפילות, אחרי עצירה קצרה בהקלדה.</p>
   <p class="small muted">המייל המאומת משמש להתאמה לטופס; המחשבון שומר מזהים פנימיים ולא מפרסם מיילים או שמות. תשובות היסטוריות ללא מזהה נשמרות בנפרד ולא נספרות במדגם המזוהה.</p>
   <div class="row2"><div id="gsiBtn"></div></div>
   <p id="authStatus" class="small muted" role="status" aria-live="polite">טוען את אפשרות ההתחברות…</p>
@@ -204,9 +205,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
     <div class="err" id="trackErr"></div>
   </div>
 
-  <div class="row2" style="margin-top:18px">
-    <button type="button" class="primary" id="go" disabled>חשב ושמור את הציונים</button>
-  </div>
+  <p class="small muted">שמירה וחישוב אוטומטיים מופעלים לאחר השלמת הסכם, בחירת מו״ר והמסלול. מצב השמירה יופיע מיד מתחת לטופס.</p>
   </fieldset>
 </section>
 
@@ -220,7 +219,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 <section class="card"><div id="stats"></div></section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 5.1: תנאי מעבר מפורש, התפלגות ציונים ומתלבטים; לא תחזית קבלה.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 5.2: שמירה וחישוב אוטומטיים ותרשימי סקר; לא תחזית קבלה.
 </footer>
 </div>
 
@@ -250,6 +249,8 @@ let ID_TOKEN=null, LAST_RESULT=null;
 let AUTH_SUB=null, AUTH_LOADING=false, AUTH_ATTEMPT=0, AUTH_TIMER=null, SAVING=false;
 let AUTH_VERIFIED=false, VERIFYING=false, SESSION_GENERATION=0;
 let DATA_EPOCH=0;
+let AUTO_TIMER=null, EDIT_REVISION=0, LAST_SAVED_KEY=null, DIRTY=false;
+const scoreKey=me=>JSON.stringify([me.c,me.m,me.t]);
 async function apiCall(action,payload={},token=ID_TOKEN){
   if(!token)throw Object.assign(new Error('יש להתחבר עם Google.'),{code:'AUTH'});
   const controller=new AbortController();
@@ -281,17 +282,17 @@ function mergedPool(){
 }
 
 /* ======================= UI =======================*/
-function readMe(){
+function readMe(quiet=false){
   const c=parseFloat($('cog').value);
   const hasMor=document.querySelector('input[name=hasMor]:checked');
   const m=parseFloat($('mor').value);
   const tr=document.querySelector('input[name=track]:checked');
   let ok=true;
-  const cOk=!isNaN(c)&&c>=200&&c<=800; $('cog').classList.toggle('bad',!cOk); $('cogErr').textContent=cOk?'':'הזן/י סכם בין 200 ל-800'; ok&&=cOk;
-  if(!hasMor){ok=false;$('morErr').textContent='סמן/י אם יש לך ציון מו"ר';}
-  else if(hasMor.value==='1'){const mOk=!isNaN(m)&&m>=150&&m<=250;$('mor').classList.toggle('bad',!mOk);$('morErr').textContent=mOk?'':'הזן/י ציון בין 150 ל-250';ok&&=mOk;}
+  const cOk=Number.isFinite(c)&&c>=200&&c<=800; if(!quiet){$('cog').classList.toggle('bad',!cOk); $('cogErr').textContent=cOk?'':'הזן/י סכם בין 200 ל-800';} ok&&=cOk;
+  if(!hasMor){ok=false;if(!quiet)$('morErr').textContent='סמן/י אם יש לך ציון מו"ר';}
+  else if(hasMor.value==='1'){const mOk=Number.isFinite(m)&&m>=150&&m<=250;if(!quiet){$('mor').classList.toggle('bad',!mOk);$('morErr').textContent=mOk?'':'הזן/י ציון בין 150 ל-250';}ok&&=mOk;}
   else $('morErr').textContent='';
-  $('trackErr').textContent=tr?'':'שדה חובה';
+  if(!quiet)$('trackErr').textContent=tr?'':'שדה חובה';
   ok&&=!!tr;
   if(!ok)return null;
   return{c,m:hasMor.value==='1'?m:null,t:tr.value};
@@ -301,16 +302,14 @@ function readMe(){
 function decodeJwt(t){try{return JSON.parse(decodeURIComponent(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}catch(e){return{};}}
 function syncAuthUi(){
   const signedIn=AUTH_VERIFIED&&!!ID_TOKEN;
-  $('inputFields').disabled=!signedIn||SAVING;
-  $('go').disabled=!signedIn||SAVING;
-  $('go').textContent=SAVING?'שומר ומחשב…':'חשב ושמור את הציונים';
+  $('inputFields').disabled=!signedIn;
   $('submit').disabled=!signedIn||SAVING;
   $('signOut').disabled=SAVING;
   if($('refreshData'))$('refreshData').disabled=!signedIn||SAVING||REFRESHING;
   $('signOut').classList.toggle('hidden',!signedIn&&!VERIFYING);
   $('who').classList.toggle('hidden',!signedIn);
   $('gsiBtn').classList.toggle('hidden',signedIn||VERIFYING);
-  $('inputGate').textContent=signedIn?'הציונים יישמרו אוטומטית עם החישוב. שינוי נוסף יעדכן את אותה רשומה.':
+  $('inputGate').textContent=signedIn?'שמירה וחישוב אוטומטיים פעילים. לאחר עצירה קצרה בהקלדה, כל שינוי תקין יעדכן את אותה רשומה.':
     VERIFYING?'מאמת את החשבון וטוען נתונים מהשרת…':'יש להתחבר עם Google לפני הזנת ציונים וניתוח תרחישים.';
 }
 function resetScores(){
@@ -321,6 +320,7 @@ function resetScores(){
 }
 function clearAuth(message){
   clearTimeout(AUTH_TIMER);
+  clearTimeout(AUTO_TIMER); EDIT_REVISION++; LAST_SAVED_KEY=null; DIRTY=false;
   SESSION_GENERATION++;
   ID_TOKEN=null; AUTH_SUB=null; AUTH_VERIFIED=false; VERIFYING=false; LAST_RESULT=null;
   DATA={rows:[],counts:{},source:'locked',updated:''};
@@ -329,6 +329,10 @@ function clearAuth(message){
   $('save').classList.add('hidden'); $('result').classList.add('hidden');
   $('authStatus').textContent=message||'יצאת מהמחשבון. יש להתחבר מחדש כדי לחשב ולשמור.';
   window.google?.accounts?.id?.disableAutoSelect();
+  if(typeof RedirectAuth!=='undefined'){
+    RedirectAuth.pause();
+    if(RedirectAuth.enabled()){$('authRetry').textContent='המשך להזדהות ב־Google';$('authRetry').classList.remove('hidden');}
+  }
   resetScores();
   syncAuthUi();
   renderStats();
@@ -362,10 +366,12 @@ async function receiveCredential(resp){
     }
     $('who').textContent=`מחובר/ת: ${p.name||p.given_name||'חשבון Google'}${p.email?' · '+p.email:''}`;
     $('authStatus').textContent=j.identityNotice||
-      'החשבון אומת. הזינו ציונים ולחצו „חשב ושמור את הציונים”; הרשומה הקיימת תתעדכן אוטומטית.';
+      'החשבון אומת. הזינו או שנו ציונים; השמירה והחישוב מתבצעים אוטומטית.';
     $('authRetry').classList.add('hidden');
     $('saveMsg').textContent='';
     syncAuthUi();renderStats();
+    LAST_SAVED_KEY=own?scoreKey(own):null; DIRTY=false;
+    if(own)renderRecommendation({c:own.c,m:own.m,t:own.t});
   }catch(e){
     if(generation!==SESSION_GENERATION)return;
     clearAuth('לא ניתן להשלים את ההתחברות: '+e.message);
@@ -376,6 +382,9 @@ async function receiveCredential(resp){
     Math.min(Number(p.exp)*1000-Date.now(),2147483647));
 }
 function initAuth(){
+  if(typeof RedirectAuth!=='undefined'&&RedirectAuth.enabled()){
+    RedirectAuth.start();return;
+  }
   if(!['naaman6.github.io','127.0.0.1','localhost'].includes(location.hostname)){
     $('authStatus').textContent='זוהי תצוגה מקדימה בלבד. הזדהות Google ושמירה זמינות באתר המקורי, שהוגדר ככתובת המורשית.';
     $('gsiBtn').innerHTML='<a href="https://naaman6.github.io/sechem-calculator/" target="_blank" rel="noopener">פתיחת המחשבון באתר המקורי</a>';
@@ -421,6 +430,9 @@ async function submitMe(){
   if(!AUTH_VERIFIED||!ID_TOKEN){$('auth').focus();return;}
   const me=readMe();
   if(!me)return;
+  const key=scoreKey(me);
+  if(key===LAST_SAVED_KEY){DIRTY=false;renderRecommendation(me);return;}
+  const revision=EDIT_REVISION;
   const requestToken=ID_TOKEN;
   DATA_EPOCH++;
   SAVING=true; syncAuthUi();
@@ -434,14 +446,35 @@ async function submitMe(){
     applyData(j);
     $('saveMsg').textContent=j.saved.changed?'הציונים נשמרו אוטומטית. לחשבון הזה יש רשומת מחשבון אחת במאגר המאוחד.':
       'הנתונים כבר מעודכנים. לא נוספה רשומה כפולה.';
-    renderStats();renderRecommendation(me);
-    $('save').scrollIntoView({behavior:'smooth',block:'start'});
+    LAST_SAVED_KEY=key;
+    renderStats();
+    if(revision===EDIT_REVISION){DIRTY=false;renderRecommendation(me);}
+    else $('saveMsg').textContent='הגרסה הקודמת נשמרה; השינוי האחרון עדיין ממתין לשמירה.';
   }catch(e){
     if(ID_TOKEN!==requestToken)return;
     if(e.code==='AUTH'){clearAuth(e.message);return;}
     $('saveMsg').textContent='לא התקבל אישור שמירה: '+e.message;
     $('submit').classList.remove('hidden');
-  }finally{SAVING=false; syncAuthUi();}
+  }finally{
+    SAVING=false; syncAuthUi();
+    // Serialize writes and let the latest valid edit win, without freezing input.
+    if(AUTH_VERIFIED&&revision!==EDIT_REVISION)scheduleAutoSave(false);
+  }
+}
+function scheduleAutoSave(edited=true){
+  clearTimeout(AUTO_TIMER);
+  if(!AUTH_VERIFIED)return;
+  if(edited){EDIT_REVISION++;DATA_EPOCH++;DIRTY=true;}
+  LAST_RESULT=null;$('result').classList.add('hidden');
+  $('save').classList.remove('hidden');$('submit').classList.add('hidden');
+  const me=readMe(true);
+  if(!me){$('saveMsg').textContent='ממתין להשלמת ציונים ומסלול תקינים. הנתונים החלקיים לא נשמרו.';return;}
+  if(scoreKey(me)===LAST_SAVED_KEY&&!SAVING){
+    DIRTY=false;$('saveMsg').textContent='הנתונים כבר שמורים. מחשב מחדש ללא כתיבה נוספת.';
+    renderRecommendation(me);return;
+  }
+  $('saveMsg').textContent=SAVING?'שומר… השינוי האחרון ממתין בתור.':'השינוי נקלט. שומר ומחשב אוטומטית…';
+  if(!SAVING)AUTO_TIMER=setTimeout(()=>submitMe(),800);
 }
 
 /* ======================= WIRING =======================*/
@@ -450,21 +483,20 @@ $('useCog').addEventListener('click',()=>{
   const b=parseFloat($('bag').value), p=parseFloat($('psy').value);
   if(isNaN(b)||isNaN(p)||b<0||b>130||p<200||p>800){$('helperErr').textContent='הזן/י ממוצע בגרות (0–130) ופסיכומטרי (200–800)';return;}
   $('helperErr').textContent=''; $('cog').value=((6.666*b+p)/2).toFixed(2);
+  scheduleAutoSave();
 });
-$('go').addEventListener('click',submitMe);
 $('submit').addEventListener('click',submitMe);
 $('authRetry').addEventListener('click',initAuth);
 $('signOut').addEventListener('click',()=>{if(!SAVING)clearAuth();});
-$('inputFields').addEventListener('input',()=>{
-  if(!AUTH_VERIFIED||SAVING)return;
-  LAST_RESULT=null;$('result').classList.add('hidden');
-  $('save').classList.remove('hidden');
-  $('saveMsg').textContent='הנתונים נערכו. הם יישמרו עם הלחיצה הבאה על „חשב ושמור את הציונים”.';
-  $('submit').classList.add('hidden');
+$('inputFields').addEventListener('input',e=>{
+  if(['cog','mor','hasMorY','hasMorN','trA','trB','trU','trM'].includes(e.target.id))scheduleAutoSave();
 });
+window.addEventListener('beforeunload',e=>{if(AUTH_VERIFIED&&(SAVING||DIRTY)){e.preventDefault();e.returnValue='';}});
 
 </script>
-<script src="scenario-model.js?v=5.1"></script>
-<script src="scenario-ui.js?v=5.1"></script>
+<script src="auth-redirect.js?v=5.2"></script>
+<script src="survey-charts.js?v=5.2"></script>
+<script src="scenario-model.js?v=5.2"></script>
+<script src="scenario-ui.js?v=5.2"></script>
 </body>
 </html>

@@ -141,9 +141,21 @@ function readForms_(ss) {
   const identified = new Map();
   let historical = 0, invalid = 0;
   const survey = { answered: 0, tracks: { A: 0, B: 0, U: 0, M: 0 },
-    historicalRows: [], validRows: 0, identifiedResponses: 0 };
+    historicalRows: [], validRows: 0, identifiedResponses: 0,
+    totalResponses: 0, distributions: { cog: {}, mor: {} } };
   values.slice(1).forEach((row, index) => {
     if (row.every(x => x === '')) return;
+    survey.totalResponses++;
+    // Aggregate the original form answers independently of model validity.
+    // No free text, email, identifier or per-person linkage enters these counts.
+    [['cog', pos.cog], ['mor', pos.mor]].forEach(([key, column]) => {
+      const raw = String(row[column]).trim();
+      if (!raw) return;
+      const number = Number(raw.replace(',', '.'));
+      const label = Number.isFinite(number) && number >= 0 && number <= 1000
+        ? String(number) : 'לא מספרי / מחוץ לטווח';
+      survey.distributions[key][label] = (survey.distributions[key][label] || 0) + 1;
+    });
     if (String(row[pos.track] || '').trim()) {
       survey.answered++;
       survey.tracks[trackCode_(String(row[pos.track]))]++;

@@ -7,6 +7,7 @@ surveySection.innerHTML=`
   <h2>תמונת הסקר המלאה, בנפרד מהמאגר המזוהה</h2>
   <div id="surveyStats" class="stats"></div>
   <p id="surveyNote" class="small muted">יש להתחבר כדי לטעון את הסקר.</p>
+  <div id="surveyCharts"></div>
   <h3>מאגר מזוהה משולב: טופס + מחשבון</h3>
   <div id="stats" class="stats"></div>
   <p id="dataSrc" class="small muted"></p><p id="dataCaveat" class="note hidden"></p>
@@ -16,6 +17,7 @@ function statsMarkup(items){
   return items.map(([n,t])=>`<div class="stat"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
 }
 function renderStats(){
+  if(typeof SurveyCharts!=='undefined')SurveyCharts.render($('surveyCharts'),AUTH_VERIFIED?DATA.survey:null);
   const live=AUTH_VERIFIED&&DATA.source==='live';
   $('refreshData').disabled=!live||SAVING||REFRESHING;
   if(!live){
@@ -146,5 +148,5 @@ async function refreshScenarioData(automatic=false){
 $('refreshData').addEventListener('click',()=>refreshScenarioData(false));
 setInterval(()=>{if(!document.hidden)refreshScenarioData(true);},60000);
 syncAuthUi();
-initAuth();
+if(RedirectAuth.enabled())RedirectAuth.boot();else initAuth();
 renderStats();
