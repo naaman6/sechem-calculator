@@ -39,63 +39,96 @@ function renderStats(){
   $('dataCaveat').classList.remove('hidden');
 }
 
-function renderRecommendation(me){
+
+let ANALYSIS_JOB=0;
+function thresholdLabel(value){
+  if(value===null)return 'אין קבוצה';
+  if(!Number.isFinite(value))return 'מעל 250';
+  if(value<=150)return 'עד 150';
+  return String(Math.ceil(value));
+}
+async function renderRecommendation(me){
   if(!AUTH_VERIFIED)return;
+  const job=++ANALYSIS_JOB;
   LAST_RESULT={me};
+  const current=()=>AUTH_VERIFIED&&job===ANALYSIS_JOB&&LAST_RESULT?.me===me;
   $('result').classList.remove('hidden');
   if(me.t==='M'){
     $('scenarioOutput').textContent='הציונים נשמרו. מתווה מילואים נבחן בנפרד ואינו מתאים להשוואה בין המכסות הרגילות.';return;
   }
+  $('scenarioOutput').textContent='בודק את התפלגות הציונים ואת שיוך המתלבטים…';
   try{
     const history=DATA.survey?.historicalRows||[];
     const peers=[...DATA.rows.filter(x=>!x.self),...history];
     const reference=[...DATA.rows,...history].filter(x=>x.t!=='M');
     const ms=ScenarioModel.moments(reference.map(x=>x.c));
-    const params={mu:ms.mu,sd:ms.sd,internalMu:200,internalSd:20,
-      r:0,distribution:'normal',undecided:'exclude'};
-    const runs=[],table=[];
+    const params={mu:ms.mu,sd:ms.sd,internalMu:200,internalSd:20,r:0,distribution:'normal',undecided:'exclude'};
+    const hasMor=me.m!==null;
+    const allRuns=[],rows=[];
+    let coverageComplete=!!DATA.survey;
     for(const method of ScenarioModel.methods){
       if(method.id==='C'&&!(Number.isFinite(params.sd)&&params.sd>0)){
-        table.push(`<tr><td>${method.name}</td><td colspan="2">אין פיזור מספיק לחישוב</td></tr>`);continue;
+        coverageComplete=false;
+        rows.push(`<tr><td>${method.name}</td><td colspan="${hasMor?3:1}">אין פיזור מספיק לחישוב</td></tr>`);continue;
       }
-      const group=[0,.3,.6,.9].map(r=>ScenarioModel.run(me,peers,{...params,r},method.id,1500));
-      runs.push(...group);
-      const ownB=group.reduce((sum,x)=>sum+x.B[0].final.mean,0)/group.length;
-      table.push(`<tr><td>${method.name}</td><td class="num">${group[0].ownA==null?'ללא מו״ר':f1(group[0].ownA)}</td><td class="num">${f1(ownB)}</td></tr>`);
+      const methodRuns=[];
+      for(const allocation of (hasMor?['exclude','A','B']:['exclude'])){
+        for(const profile of (hasMor?ScenarioModel.profiles:[ScenarioModel.profiles[0]])){
+          for(const r of (hasMor&&profile.distribution!=='uniform'?[0,.3,.6,.9]:[0])){
+            await new Promise(resolve=>setTimeout(resolve,0));
+            if(!current())return;
+            const result=ScenarioModel.switchRun(me,peers,{...params,...profile,profile:profile.id,r,undecided:allocation},method.id,1000);
+            methodRuns.push(result);
+          }
+        }
+      }
+      allRuns.push(...methodRuns);
+      const baseline=methodRuns.filter(x=>x.allocation==='exclude'&&x.profile==='base');
+      const bMean=baseline.reduce((s,x)=>s+x.ownB.mean,0)/baseline.length;
+      if(hasMor){
+        const thresholds=methodRuns.map(x=>x.thresholdMedian).filter(x=>x!==null);
+        const lo=thresholds.length?Math.min(...thresholds):null,hi=thresholds.length?Math.max(...thresholds):null;
+        const thresholdText=lo===null?'אין קבוצת השוואה':lo===hi?thresholdLabel(lo):
+          `<bdi dir="ltr">${thresholdLabel(lo)} – ${thresholdLabel(hi)}</bdi>`;
+        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(baseline[0].ownA)}</td><td class="num">${f1(bMean)}</td><td>${thresholdText}</td></tr>`);
+      }else{
+        rows.push(`<tr><td>${method.name}</td><td class="num">${f1(bMean)}</td></tr>`);
+      }
     }
-    const rec=ScenarioModel.recommendation(runs,me.m!==null);
-    let title='',why='';
-    if(rec.reason==='noMor'){
-      title='ההמלצה: מכסה ב׳, המיון הפנימי';
-      why='לא הזנת ציון מו״ר, ולכן אין כרגע ציון קיים להשוואה במכסה א׳.';
-    }else if(rec.reason==='missing'){
-      title='עדיין אין מספיק נתונים להמלצה';
-      why='חסרה קבוצת השוואה באחת המכסות. הציונים למטה הם חישובים, לא בסיס להכרעה.';
-    }else if(rec.reason==='close'){
-      title='ההמלצה המסויגת: להישאר כרגע במכסה א׳';
-      why='במרכז התרחישים שנבדקו לא מתקבל יתרון יחסי ברור לאחת המכסות. לכן ברירת המחדל הזהירה כאן היא לשמור על המו״ר הקיים, ולא משום שהוכח שסיכויי הקבלה בא׳ גבוהים יותר.';
+    if(!current())return;
+    const decision=ScenarioModel.switchRecommendation(allRuns,hasMor,coverageComplete);
+    let title,why;
+    if(decision.reason==='noMor'){
+      title='ללא מו״ר: מכסה ב׳ היא המסלול הרלוונטי';
+      why='אין כאן החלטה על מעבר מא׳. הטבלה מציגה את הסכם הסופי המשוער שלך בב׳ לפי כל שיטה.';
+    }else if(decision.reason==='robust'){
+      title='יש בסיס במודל לשקול מעבר למכסה ב׳';
+      why='יתרון הדירוג לב׳ נשמר בכל התפלגויות הציונים וחלוקות המתלבטים שנבדקו, גם כשמביאים בחשבון תוצאת מיון פחות טובה. זו המלצה מותנית בהנחות, לא הבטחת קבלה.';
+    }else if(decision.reason==='missing'||decision.reason==='limited'){
+      title='כרגע: לשמור על המו״ר, אין בסיס מספיק למעבר';
+      why='חסרים נתונים או שאין מספיק רשומות להשוואה מלאה. שמירת הציון הידוע היא ברירת מחדל זהירה, לא הוכחה שמכסה א׳ עדיפה.';
     }else{
-      title=rec.choice==='B'?'המלצה מסויגת: מכסה ב׳, המיון הפנימי':'המלצה מסויגת: מכסה א׳, עם המו״ר הקיים';
-      why=`מרכז התרחישים שנבדקו מצביע על מיקום יחסי טוב יותר עבורך מול הרשומות במכסה ${rec.choice==='B'?'ב׳':'א׳'}. זו המלצת עבודה לפי המודל, לא תחזית קבלה.`;
+      title='כרגע: להישאר עם המו״ר במכסה א׳';
+      why='המעבר לב׳ לא עבר את כלל הזהירות בכל בדיקות ההתפלגות והמתלבטים. מעבר עשוי להשתלם בתנאים מסוימים; ציון האיזון בטבלה מראה מה תצטרך להשיג, אך אינו ציון שהוכח שתוכל לקבל.';
     }
-    if(rec.mixed)why+=' הכיוון מתהפך בחלק מההנחות, ולכן ההמלצה אינה יציבה.';
-    const nA=runs[0]?.A.length||0,nB=(runs[0]?.B.length||1)-1;
     $('scenarioOutput').innerHTML=`
       <div class="info"><h3 style="margin:0 0 8px">${title}</h3><p style="margin:0">${why}</p></div>
-      <div class="table-scroll compact-scores"><table><thead><tr><th>שיטת חישוב</th><th>הסכם שלך בא׳</th><th>הסכם המשוער שלך בב׳</th></tr></thead><tbody>${table.join('')}</tbody></table></div>
-      <p class="small muted">ההשוואה מבוססת על ${nA} רשומות בא׳ ו־${nB} בב׳, ללא המתלבטים. ציון ב׳ הוא ממוצע תרחישים; משווים ציונים רק בתוך אותה שיטה.</p>
-      <p class="note small"><strong>ייתכן שההמלצה שגויה.</strong> הסקר אינו מייצג וייתכנו כפילויות, לרבות תשובה ישנה שלך. החישוב תלוי בהנחות לא מאומתות על המיון הפנימי והשקלול, ואינו הסתברות קבלה.</p>`;
-  }catch(e){$('scenarioOutput').textContent=e.message;}
+      <div class="table-scroll compact-scores ${hasMor?'switch-scores':''}"><table><thead><tr><th>שיטה</th>${hasMor?'<th>סכם בא׳</th>':''}<th>סכם משוער בב׳</th>${hasMor?'<th>פנימי לאיזון עם א׳*</th>':''}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
+      ${hasMor?'<p class="small muted">* טווח ציוני האיזון בין התרחישים, לא טווח הציון הצפוי שלך ולא סף קבלה. בכל תרחיש זהו חציון הציון הדרוש לשוויון בדירוג היחסי מול א׳. ציון ב׳ מוצג בתרחיש הבסיס.</p><p class="small muted">המתלבטים נבדקו בנפרד, בעלי מו״ר בא׳ והיתר בב׳, וכולם בב׳. אלה תרחישי קצה, לא כל החלוקות האפשריות.</p>':'<p class="small muted">ציון ב׳ הוא ממוצע מדומה בהנחת התפלגות בסיס, לא ציון שנמדד. ציונים משיטות שונות אינם באותו סולם.</p>'}
+      <p class="note small"><strong>ההמלצה עלולה להיות שגויה.</strong> הסקר אינו מייצג וייתכנו כפילויות. נבדקו התפלגויות אפשריות, לא התפלגות מאומתת של אריאל; גם כלל הזהירות אינו סף מדעי מוכח. <a href="https://github.com/naaman6/sechem-calculator/blob/main/README.md#כלל-ההחלטה" target="_blank" rel="noopener">הנחות וכלל ההחלטה</a></p>`;
+    LAST_RESULT={me,analysis:{decision,runs:allRuns}};
+  }catch(e){if(current())$('scenarioOutput').textContent=e.message;}
 }
 let REFRESHING=false;
 async function refreshScenarioData(automatic=false){
   if(!AUTH_VERIFIED||SAVING||REFRESHING)return;
   const token=ID_TOKEN;
+  const epoch=DATA_EPOCH;
   REFRESHING=true;$('refreshData').disabled=true;
   if(!automatic)$('refreshStatus').textContent='קורא את הנתונים העדכניים, ללא שמירה…';
   try{
     const j=await apiCall('session',{},token);
-    if(token!==ID_TOKEN||SAVING)return;
+    if(token!==ID_TOKEN||SAVING||epoch!==DATA_EPOCH)return;
     applyData(j);renderStats();
     if(LAST_RESULT)renderRecommendation(LAST_RESULT.me);
     $('refreshStatus').textContent='הנתונים רועננו. לא נשמרו ציונים ולא נוצרה תשובה בטופס.';

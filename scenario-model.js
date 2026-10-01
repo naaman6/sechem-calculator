@@ -59,6 +59,7 @@ const ScenarioModel = (() => {
       if(r.t==='A'&&r.m!=null)A.push(x);
       else if(r.t==='B')B.push(x);
       else if(r.t==='U'&&mode==='A'&&r.m!=null)A.push(x);
+      else if(r.t==='U'&&mode==='A'&&r.m==null)B.push(x);
       else if(r.t==='U'&&mode==='B')B.push(x);
       else excluded++;
     });
@@ -88,18 +89,86 @@ const ScenarioModel = (() => {
       aFraction:aRank==null?null:(aRank-.5)/(A.length+1),
       bFraction:ranks.length?(summary(ranks).mean-.5)/(B.length+1):null};
   }
-  // A transparent decision heuristic, not a probability or a validated ensemble.
-  // Compare within-group relative ranks, never scores from different scales.
-  function recommendation(runs,hasMor=true){
-    if(!hasMor)return {choice:'B',reason:'noMor',mixed:false};
-    const differences=runs.filter(x=>x.aFraction!==null&&x.bFraction!==null)
-      .map(x=>x.aFraction-x.bFraction);
-    if(!differences.length)return {choice:null,reason:'missing',mixed:false};
-    const middle=summary(differences).median;
-    const mixed=differences.some(x=>x>.03)&&differences.some(x=>x<-.03);
-    if(Math.abs(middle)<=.03)return {choice:'A',reason:'close',mixed};
-    return {choice:middle>0?'B':'A',reason:'rank',mixed};
+  // Stress profiles are explicit assumptions, NOT a fitted distribution for Ariel.
+  const profiles=[
+    {id:'base',distribution:'normal',internalMu:200,internalSd:20},
+    {id:'narrow',distribution:'normal',internalMu:200,internalSd:15},
+    {id:'wide',distribution:'normal',internalMu:200,internalSd:25},
+    {id:'lower',distribution:'normal',internalMu:190,internalSd:20},
+    {id:'higher',distribution:'normal',internalMu:210,internalSd:20},
+    {id:'uniform-stress',distribution:'uniform',internalMu:200,internalSd:20}
+  ];
+  const switchPolicy={minPeers:10,minGain:.05,minBenefitShare:.70,maxLossShare:.10};
+  function inverseScore(c,target,p,method){
+    if(target<=score(c,150,p,method))return 150;
+    if(target>score(c,250,p,method))return Infinity;
+    if(method==='B')return (target-.7*c)/.3;
+    if(method==='C')return (target-.7*(200+20*(c-p.mu)/p.sd))/.3;
+    const psy=(target-.7*c)/.3;
+    return interp(interp(psy,px,pp),mp,mx);
   }
-  return {methods,moments,summary,score,groups,run,recommendation};
+  function empiricalQuantile(a,p){
+    const sorted=[...a].sort((x,y)=>x-y);
+    return sorted[Math.max(0,Math.ceil(p*sorted.length)-1)];
+  }
+  // Grade needed to match A's peer-relative rank in one simulated B cohort.
+  // Peer-relative position is the fraction above the user, not a population percentile.
+  function threshold(c,aFraction,otherScores,p,method){
+    if(!otherScores.length||aFraction===null)return null;
+    const allowedAbove=Math.floor(aFraction*otherScores.length+1e-10);
+    if(allowedAbove>=otherScores.length)return 150;
+    const descending=[...otherScores].sort((x,y)=>y-x);
+    return inverseScore(c,descending[allowedAbove],p,method);
+  }
+  function switchRun(me,rows,p,method='C',sims=1000){
+    if(!Number.isInteger(sims)||sims<100)throw new Error('נדרשות לפחות 100 הגרלות.');
+    if(method==='C'&&!(Number.isFinite(p.sd)&&p.sd>0&&Number.isFinite(p.mu)))throw new Error('אין פיזור קוגניטיבי מספיק לתקנון.');
+    const {A,B,excluded}=groups(rows,p.undecided);
+    const ownA=me.m==null?null:score(me.c,me.m,p,method);
+    const aRank=ownA==null||!A.length?null:rank(ownA,A.map(x=>score(x.c,x.m,p,method)));
+    const aFraction=aRank==null?null:(aRank-1)/A.length;
+    const random=rng(),thresholds=[],ownFinal=[],ownInternal=[],bFractions=[];
+    let benefits=0,losses=0,atLeastEqual=0;
+    for(let i=0;i<sims;i++){
+      const internalMe=internal(me.m,p,random),finalMe=score(me.c,internalMe,p,method);
+      const scores=B.map(x=>score(x.c,internal(x.m,p,random),p,method));
+      ownInternal.push(internalMe);ownFinal.push(finalMe);
+      if(B.length){
+        const bFraction=(rank(finalMe,scores)-1)/B.length;bFractions.push(bFraction);
+        if(aFraction!==null){
+          const gain=aFraction-bFraction;
+          if(gain>=switchPolicy.minGain)benefits++;
+          if(gain<=-switchPolicy.minGain)losses++;
+          if(gain>=0)atLeastEqual++;
+          thresholds.push(threshold(me.c,aFraction,scores,p,method));
+        }
+      }
+    }
+    return {method,profile:p.profile||'base',r:p.r,allocation:p.undecided,
+      aPeers:A.length,bPeers:B.length,excluded,ownA,aRank,aFraction,
+      ownB:summary(ownFinal),internal:summary(ownInternal),
+      bFraction:bFractions.length?summary(bFractions).mean:null,
+      thresholdMedian:thresholds.length?empiricalQuantile(thresholds,.5):null,
+      thresholdP90:thresholds.length?empiricalQuantile(thresholds,.9):null,
+      thresholdImpossibleShare:thresholds.length?thresholds.filter(x=>!Number.isFinite(x)).length/sims:null,
+      benefitShare:aFraction!==null&&B.length?benefits/sims:null,
+      lossShare:aFraction!==null&&B.length?losses/sims:null,
+      atLeastEqualShare:aFraction!==null&&B.length?atLeastEqual/sims:null,sims};
+  }
+  // Conservative product policy; these numerical guardrails are not scientifically
+  // validated cutoffs. There is no voting or averaging of scenario probabilities.
+  function switchRecommendation(runs,hasMor=true,coverageComplete=true){
+    if(!hasMor)return {choice:'B',reason:'noMor'};
+    if(!runs.length||runs.some(x=>x.aFraction===null||x.bFraction===null))
+      return {choice:'A',reason:'missing'};
+    if(!coverageComplete||runs.some(x=>x.aPeers<switchPolicy.minPeers||x.bPeers<switchPolicy.minPeers))
+      return {choice:'A',reason:'limited'};
+    const robust=runs.every(x=>x.benefitShare>=switchPolicy.minBenefitShare&&x.lossShare<=switchPolicy.maxLossShare);
+    return {choice:robust?'B':'A',reason:robust?'robust':'notRobust',
+      minBenefitShare:Math.min(...runs.map(x=>x.benefitShare)),
+      maxLossShare:Math.max(...runs.map(x=>x.lossShare))};
+  }
+  return {methods,moments,summary,score,groups,run,profiles,switchPolicy,
+    inverseScore,threshold,switchRun,switchRecommendation};
 })();
 if(typeof module!=='undefined')module.exports=ScenarioModel;

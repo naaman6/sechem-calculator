@@ -132,6 +132,8 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 .compact-scores table{min-width:0;table-layout:fixed;width:100%}
 .compact-scores th,.compact-scores td{padding:12px 8px;overflow-wrap:anywhere}
 .compact-scores th:first-child{width:42%}
+.switch-scores th:first-child{width:28%}
+@media(max-width:600px){.switch-scores th,.switch-scores td{padding:10px 4px;font-size:.8rem}}
 @media(max-width:600px){.mini{grid-template-columns:1fr}select{font-size:.92rem}}
 </style>
 </head>
@@ -141,7 +143,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
   <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 22V10m7 12V14m7 8V7" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
   <h1>איך כדאי לי להתמיין לרפואה באריאל?</h1>
 </header>
-<p class="lede">הסכם הסופי המשוער שלך בכל שיטה, לצד המלצה מסויגת בין מכסה א׳ (מו״ר קיים) למכסה ב׳ (מיון פנימי). ההמלצה מבוססת על נתוני הסקר והנחות המודל, אינה רשמית ועלולה להיות שגויה.</p>
+<p class="lede">יש לך מו״ר? המחשבון בודק באילו תנאים כדאי לשקול מעבר למיון הפנימי, תוך התחשבות בהתפלגות הציונים ובמתלבטים. ללא מו״ר מוצג רק הסכם המשוער בב׳. זהו כלי לא רשמי, וההמלצה עלולה להיות שגויה.</p>
 
 <!-- ============ STEP 1: INPUTS ============ -->
 <section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
@@ -218,7 +220,7 @@ select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;
 <section class="card"><div id="stats"></div></section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 4.1: המלצה מסויגת וסכם משוער, ללא תחזית קבלה.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 5.0: תנאי מעבר, התפלגות ציונים ומתלבטים; לא תחזית קבלה.
 </footer>
 </div>
 
@@ -247,6 +249,7 @@ let DATA={rows:[],counts:{identified:0,historical:0,unresolved:0,invalid:0},sour
 let ID_TOKEN=null, LAST_RESULT=null;
 let AUTH_SUB=null, AUTH_LOADING=false, AUTH_ATTEMPT=0, AUTH_TIMER=null, SAVING=false;
 let AUTH_VERIFIED=false, VERIFYING=false, SESSION_GENERATION=0;
+let DATA_EPOCH=0;
 async function apiCall(action,payload={},token=ID_TOKEN){
   if(!token)throw Object.assign(new Error('יש להתחבר עם Google.'),{code:'AUTH'});
   const controller=new AbortController();
@@ -419,6 +422,7 @@ async function submitMe(){
   const me=readMe();
   if(!me)return;
   const requestToken=ID_TOKEN;
+  DATA_EPOCH++;
   SAVING=true; syncAuthUi();
   $('save').classList.remove('hidden');$('submit').classList.add('hidden');
   $('result').classList.add('hidden'); LAST_RESULT=null;
@@ -460,7 +464,7 @@ $('inputFields').addEventListener('input',()=>{
 });
 
 </script>
-<script src="scenario-model.js?v=4.1"></script>
-<script src="scenario-ui.js?v=4.1"></script>
+<script src="scenario-model.js?v=5"></script>
+<script src="scenario-ui.js?v=5"></script>
 </body>
 </html>
