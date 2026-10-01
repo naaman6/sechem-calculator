@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>איך כדאי לי להתמיין לרפואה באריאל? · מחשבון סכם והמלצה</title>
+<title>מחשבון סכם סופי משוער · תרחישי מיון לרפואה באריאל</title>
 <meta name="description" content="מחשבון לא רשמי למועמדי המסלול השש-שנתי לרפואה באריאל: מזינים סכם קוגניטיבי ומו&quot;ר, והמחשבון מחשב לפי שלוש שיטות, משווה לנתוני המועמדים בסקר, ואומר בשפה פשוטה באיזו מכסה עדיף להתמיין ולמה.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f5c55'/%3E%3Cpath d='M9 22V10m7 12V14m7 8V7' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,6 +123,13 @@ fieldset:disabled{opacity:.55}
 .adv label{font-weight:400;font-size:.95rem}
 .adv input[type=range]{width:100%;accent-color:var(--accent)}
 .adv .rv{display:flex;justify-content:space-between;font-size:.85rem;color:var(--faint)}
+select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit}
+.table-scroll{overflow-x:auto;max-width:100%;margin-top:10px}
+.table-scroll table{min-width:540px}
+.own{background:var(--accent-soft)}
+#scenarioOutput{margin-top:18px}
+#scenarioOutput p{overflow-wrap:anywhere}
+@media(max-width:600px){.mini{grid-template-columns:1fr}select{font-size:.92rem}}
 </style>
 </head>
 <body>
@@ -131,7 +138,7 @@ fieldset:disabled{opacity:.55}
   <svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 22V10m7 12V14m7 8V7" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>
   <h1>איך כדאי לי להתמיין לרפואה באריאל?</h1>
 </header>
-<p class="lede">כלי לא רשמי של קבוצת המועמדים. מזינים שלושה נתונים, והמחשבון משווה אותך למועמדים האחרים שענו על הסקר ואומר בשפה פשוטה באיזו מכסה הסיכוי שלך גבוה יותר: <strong>מכסה א׳</strong> (ציון מו"ר קיים) או <strong>מכסה ב׳</strong> (מבדק וראיון פנימיים של אריאל). ההחלטה מחייבת, ולכן כדאי להבין את המספרים לפני יום שלישי 6.10 בשעה 10:00.</p>
+<p class="lede">כלי תרחישים לא רשמי למועמדי רפואה באריאל. משווים סכם סופי משוער במכסה א׳ (מו״ר קיים) ובמכסה ב׳ (מיון פנימי), תוך הצגת ההתפלגות וההנחות. אין כאן נוסחת קבלה מאומתת, המלצה לוותר על ציון קיים או הסתברות קבלה אישית.</p>
 
 <!-- ============ STEP 1: INPUTS ============ -->
 <section class="card auth-card" id="auth" tabindex="-1" aria-labelledby="authTitle">
@@ -149,7 +156,7 @@ fieldset:disabled{opacity:.55}
 
 <section class="card" id="inputs">
   <h2><span class="step">1</span> הנתונים שלך</h2>
-  <p class="small muted" id="inputGate">יש להתחבר עם Google לפני הזנת ציונים וקבלת המלצה.</p>
+  <p class="small muted" id="inputGate">יש להתחבר עם Google לפני הזנת ציונים וניתוח תרחישים.</p>
   <fieldset id="inputFields" disabled aria-label="ציונים ומסלול">
 
   <div class="field">
@@ -182,7 +189,7 @@ fieldset:disabled{opacity:.55}
   </div>
 
   <div class="field">
-    <label>לאיזה מסלול את/ה ניגש/ת? <span class="hint">שדה חובה. אם עוד לא החלטת, סמן/י "לא בטוח/ה" – ההמלצה תעזור.</span></label>
+    <label>לאיזה מסלול את/ה ניגש/ת? <span class="hint">שדה חובה. אם עוד לא החלטת, סמן/י "לא בטוח/ה". החישוב מציג תרחישים, לא הוראה לבחור מסלול.</span></label>
     <div class="choices">
       <input type="radio" name="track" id="trA" value="A"><label for="trA">מכסה א׳ – מסלול רגיל עם ציון מו"ר</label>
       <input type="radio" name="track" id="trB" value="B"><label for="trB">מכסה ב׳ – מסלול רגיל עם מבדק וראיון פנימיים</label>
@@ -204,80 +211,11 @@ fieldset:disabled{opacity:.55}
   <button type="button" id="submit" class="hidden" disabled>נסה שוב לשמור ולחשב</button>
 </section>
 
-<!-- ============ STEP 2: RECOMMENDATION ============ -->
-<section class="card hidden" id="result">
-  <h2><span class="step">2</span> ההמלצה</h2>
-  <div id="reco" class="reco N"><div class="k">ממתין לנתונים</div></div>
-  <div id="resultDetails">
-
-  <h3 class="small muted" style="margin:18px 0 4px">איפה את/ה עומד/ת מול המועמדים שענו על הסקר</h3>
-  <div class="pos" id="posA">
-    <div class="t"><span>מכסה א׳ (מו"ר)</span><b id="posAtxt">—</b></div>
-    <div class="bar A"><div class="fill"></div><div class="cut"></div><div class="me"></div><div class="lbl"><span>הגבוהים</span><span>הנמוכים</span></div></div>
-  </div>
-  <div class="pos" id="posB">
-    <div class="t"><span>מכסה ב׳ (מיון פנימי)</span><b id="posBtxt">—</b></div>
-    <div class="bar B"><div class="fill"></div><div class="cut"></div><div class="me"></div><div class="lbl"><span>הגבוהים</span><span>הנמוכים</span></div></div>
-  </div>
-  <div class="legend">הקו השחור הוא המיקום שלך. הקו האדום המקווקו הוא קו הקבלה המשוער כאשר <b id="cutN">200</b> מועמדים עוברים לשלב ב׳ (ניתן לשנות בטבלה למטה). האזור הצבעוני הוא המועמדים שמתקבלים.</div>
-
-  <h3 class="small muted" style="margin:22px 0 4px">מה קורה אם עוברים לשלב ב׳ יותר או פחות מועמדים</h3>
-  <p class="small muted" style="margin:0 0 6px">אריאל מקבלת 80 סטודנטים ומחלקת את המקומות בין המכסות לפי גודל הקבוצות. לכן בשתי המכסות מתקבל אותו אחוז מהמועמדים: 80 חלקי מספר העוברים לשלב ב׳. המספר הזה יתברר רק ב-5.10, ולכן מוצגים כמה תרחישים.</p>
-  <table id="nTable"><thead><tr><th>עוברים לשלב ב׳</th><th>מתקבלים</th><th>מכסה א׳</th><th>מכסה ב׳ (סיכוי)</th></tr></thead><tbody></tbody></table>
-  <div class="small muted" id="nNote"></div>
-
-  <details style="margin-top:14px">
-    <summary>המספרים לפי שלוש שיטות החישוב</summary>
-    <p class="small muted">אריאל לא פרסמה איך היא מיישרת את סקאלת הסכם (200–800) עם סקאלת המו"ר (150–250) לפני השקלול 70/30. לכן מחשבים בשלוש דרכים, וההמלצה מתבססת על שלושתן. המקום שלך נספר מתוך המועמדים בסקר באותה מכסה (כולל אותך).</p>
-    <table id="mTable"><thead><tr><th>שיטה</th><th>מקום במכסה א׳</th><th>מקום במכסה ב׳ (צפוי)</th><th>הציון שלך (א׳)</th></tr></thead><tbody></tbody></table>
-    <p class="small muted" id="mNote"></p>
-  </details>
-
-  <details class="adv" style="margin-top:8px">
-    <summary>הנחות מתקדמות (למי שרוצה לשחק עם המספרים)</summary>
-    <div class="field" style="margin-top:12px">
-      <label for="rCorr">כמה ציון המו"ר מנבא את תוצאת המיון הפנימי של אריאל: <b id="rCorrV">0.6</b></label>
-      <input type="range" id="rCorr" min="0" max="0.95" step="0.05" value="0.6">
-      <div class="rv"><span>0 – אין קשר, המיון הפנימי הוא הגרלה</span><span>0.95 – כמעט אותו דבר</span></div>
-      <p class="hint">משפיע רק על הערכת מכסה ב׳. מי שאין לו מו"ר נחשב בממוצע (200) עם פיזור מלא.</p>
-    </div>
-    <div class="field">
-      <label for="undec">איך לספור את מי שסימנו "לא בטוח/ה"</label>
-      <div class="choices">
-        <input type="radio" name="undec" id="undecSmart" value="smart" checked><label for="undecSmart">לפי מה שהמחשבון היה ממליץ להם (ברירת מחדל)</label>
-        <input type="radio" name="undec" id="undecA" value="A"><label for="undecA">כולם במכסה א׳ (מי שיש לו מו"ר)</label>
-        <input type="radio" name="undec" id="undecB" value="B"><label for="undecB">כולם במכסה ב׳</label>
-      </div>
-    </div>
-    <div class="mini">
-      <div><label for="muOv">ממוצע סכם לשיטה ג׳ <span class="hint">ריק = מחושב מהסקר</span></label><input type="number" id="muOv" step="0.1" placeholder="אוטומטי"></div>
-      <div><label for="sdOv">סטיית תקן לשיטה ג׳ <span class="hint">ריק = מחושב מהסקר</span></label><input type="number" id="sdOv" step="0.1" placeholder="אוטומטי"></div>
-    </div>
-  </details>
-  </div>
-</section>
-
-<!-- ============ DATA ============ -->
-<section class="card">
-  <h2>מה הסקר מראה עד כה</h2>
-  <div class="stats" id="stats"></div>
-  <p class="small muted" style="margin:10px 0 0" id="dataSrc">נתוני הסקר ייטענו לאחר אימות ההתחברות.</p>
-  <p class="note hidden" id="dataCaveat"></p>
-  <details>
-    <summary>איך המחשבון חושב (הסבר להדיוטות)</summary>
-    <div class="small">
-      <p><strong>הרעיון הבסיסי.</strong> דמיינו שני חדרים. בחדר א׳ יושבים כל מי שבאו עם ציון מו"ר, ובחדר ב׳ כל מי שבאו לעשות את המבדק והראיון של אריאל. אריאל נותנת לכל חדר מספר מקומות לפי גודלו, ולכן <strong>בשני החדרים מתקבל אותו אחוז</strong>. השאלה היחידה שחשובה היא: באיזה חדר את/ה קרוב/ה יותר לראש התור?</p>
-      <p><strong>חדר א׳ (מו"ר).</strong> כאן הכול ידוע: הציון הסופי הוא 70% סכם קוגניטיבי ועוד 30% מו"ר. המחשבון מדרג אותך מול כל מי שבסקר נמצא בחדר הזה.</p>
-      <p><strong>חדר ב׳ (מיון פנימי).</strong> כאן אף אחד עדיין לא יודע את הציון הלא-קוגניטיבי שלו. המחשבון מניח שמי שיש לו מו"ר גבוה יצליח בדרך כלל גם במיון הפנימי (אבל לא בוודאות), ושמי שאין לו מו"ר הוא בממוצע. על בסיס זה הוא מגריל אלפי "תוצאות אפשריות" של המיון הפנימי ובודק באיזה אחוז מהן את/ה בתוך קו הקבלה. לכן התוצאה בחדר ב׳ היא סיכוי, לא ודאות.</p>
-      <p><strong>שלוש שיטות.</strong> לפני שמחברים 70% ו-30% צריך להביא את שני הציונים לאותה סקאלה, ואריאל לא אמרה איך. לכן המחשבון בודק שלוש אפשרויות סבירות: א׳ – המרה של המו"ר לסקאלת הפסיכומטרי לפי אחוזונים ארציים; ב׳ – חיבור גולמי בלי המרה; ג׳ – המרה של הסכם לסקאלת המו"ר (ממוצע 200, סטיית תקן 20) לפי הממוצע והפיזור של המועמדים בסקר. אם שלוש השיטות מצביעות על אותה מכסה, ההמלצה בטוחה יותר.</p>
-      <p><strong>מה המחשבון לא יודע.</strong> כמה מועמדים באמת יעברו לשלב ב׳ (לכן טבלת התרחישים), האם המדגם בסקר מייצג את כולם (סביר שעונים לסקר הם בעלי ציונים גבוהים מהממוצע), ואיך בדיוק אריאל משקללת. זהו כלי עזר להחלטה, לא תחזית.</p>
-      <div class="formula">A: 0.7·cog + 0.3·psy_equiv(mor) &nbsp;|&nbsp; B: 0.7·cog + 0.3·mor &nbsp;|&nbsp; C: 0.7·(200 + 20·(cog − μ)/σ) + 0.3·mor</div>
-    </div>
-  </details>
-</section>
+<section class="card hidden" id="result"></section>
+<section class="card"><div id="stats"></div></section>
 
 <footer>
-  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 3.0.
+  מחשבון לא רשמי שנבנה על ידי מועמדים, לא על ידי אוניברסיטת אריאל. הנתונים מגיעים מסקר התנדבותי של הקבוצה ואינם מדגם מייצג. אחוזוני מו"ר: מאל"ו, מועד יולי 2025. אחוזוני פסיכומטרי: חוברת מאל"ו קיץ 2026. גרסה 4.0: תרחישים שקופים, ללא תחזית קבלה.
 </footer>
 </div>
 
@@ -329,151 +267,11 @@ async function apiCall(action,payload={},token=ID_TOKEN){
   }finally{clearTimeout(timeout);}
 }
 function applyData(j){
-  DATA={rows:j.rows,counts:j.counts,source:'live',updated:new Date(j.updated).toLocaleString('he-IL')};
+  DATA={rows:j.rows,counts:j.counts,survey:j.survey||null,source:'live',updated:new Date(j.updated).toLocaleString('he-IL')};
 }
 function mergedPool(){
   // Server has already merged identities. Never guess identity from equal scores.
   return DATA.rows.filter(r=>!r.self).map(r=>({c:r.c,m:r.m,t:r.t}));
-}
-
-/* ======================= MODEL =======================*/
-// מאל"ו, מו"ר/מרק"ם יולי 2025: ציון -> אחוז נבחנים מתחתיו
-const MOR_X=[150,170,175,180,185,190,195,200,205,210,215,220,225,230,235,250];
-const MOR_P=[0,7,11,16,22,29,37,46,57,66,76,84,91,96,99,100];
-// מאל"ו, חוברת פסיכומטרי קיץ 2026
-const PSY_X=[200,350,375,400,425,450,475,500,525,550,575,600,625,650,675,700,725,800];
-const PSY_P=[0,4,7,11,16,22,28,35,42,50,58,66,74,82,89,95,99,100];
-const interp=(x,xs,ys)=>{if(x<=xs[0])return ys[0];for(let i=1;i<xs.length;i++){if(x<=xs[i]){const t=(x-xs[i-1])/(xs[i]-xs[i-1]);return ys[i-1]+t*(ys[i]-ys[i-1]);}}return ys[ys.length-1];};
-const morToPsy=m=>interp(interp(m,MOR_X,MOR_P),PSY_P,PSY_X);
-
-const METHODS=[
-  {id:'A',name:'א׳ · המרה לאחוזוני פסיכומטרי',score:(c,m,p)=>0.7*c+0.3*morToPsy(m)},
-  {id:'B',name:'ב׳ · חיבור גולמי',score:(c,m,p)=>0.7*c+0.3*m},
-  {id:'C',name:'ג׳ · המרה פנימית (200/20)',score:(c,m,p)=>0.7*(200+20*(c-p.mu)/p.sd)+0.3*m},
-];
-
-function meanSd(a){const n=a.length;if(n<2)return{mu:NaN,sd:NaN};const mu=a.reduce((s,x)=>s+x,0)/n;const v=a.reduce((s,x)=>s+(x-mu)**2,0)/(n-1);return{mu,sd:Math.sqrt(v)};}
-function randn(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-const expInternal=(m,r)=>m==null?200:200+r*(m-200);
-const sdInternal=(m,r)=>m==null?20:20*Math.sqrt(1-r*r);
-
-/* דירוג דטרמיניסטי במכסה א׳: מקום (1 = הגבוה) מתוך n כולל המשתמש */
-function rankIn(scoreMe,others){let above=0;for(const s of others)if(s>scoreMe)above++;return{rank:above+1,n:others.length+1};}
-
-/* חלוקה של "לא בטוחים" למכסות */
-function assignUndecided(pool,params,mode){
-  const A=[],B=[];
-  const decidedA=pool.filter(r=>r.t==='A'&&r.m!=null), decidedB=pool.filter(r=>r.t==='B');
-  for(const r of pool){
-    if(r.t==='M')continue;
-    if(r.t==='A'){ if(r.m!=null)A.push(r); else B.push(r); continue;}
-    if(r.t==='B'){B.push(r);continue;}
-    // undecided
-    if(r.m==null||mode==='B'){B.push(r);continue;}
-    if(mode==='A'){A.push(r);continue;}
-    // smart: לפי השיטה המרכזית (ג׳), מיקום צפוי בכל מכסה
-    const sc=METHODS[2].score;
-    const pa=rankIn(sc(r.c,r.m,params),decidedA.map(x=>sc(x.c,x.m,params)));
-    const pb=rankIn(sc(r.c,expInternal(r.m,params.r),params),decidedB.map(x=>sc(x.c,expInternal(x.m,params.r),params)));
-    ((pa.rank/pa.n)<=(pb.rank/pb.n)?A:B).push(r);
-  }
-  return{A,B};
-}
-
-/* הערכת מכסה ב׳ בסימולציה: מחזירה מערך של "חלק מהתור" של המשתמש בכל סימולציה (0 = ראשון) */
-function simulateB(me,groupB,params,method,sims){
-  const out=new Float64Array(sims);
-  const n=groupB.length+1;
-  const meMu=expInternal(me.m,params.r), meSd=sdInternal(me.m,params.r);
-  const oMu=groupB.map(x=>expInternal(x.m,params.r)), oSd=groupB.map(x=>sdInternal(x.m,params.r));
-  for(let s=0;s<sims;s++){
-    const my=method.score(me.c,clamp(meMu+meSd*randn(),150,250),params);
-    let above=0;
-    for(let i=0;i<groupB.length;i++){const sc=method.score(groupB[i].c,clamp(oMu[i]+oSd[i]*randn(),150,250),params); if(sc>my)above++;}
-    out[s]=(above+0.5)/n;
-  }
-  return out;
-}
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-
-function analyze(me){
-  const pool=mergedPool();
-  const cogs=pool.map(r=>r.c);
-  const ms=meanSd(cogs);
-  const muOv=parseFloat($('muOv').value), sdOv=parseFloat($('sdOv').value);
-  const params={mu:!isNaN(muOv)?muOv:ms.mu, sd:!isNaN(sdOv)&&sdOv>0?sdOv:ms.sd, r:parseFloat($('rCorr').value)};
-  const mode=document.querySelector('input[name=undec]:checked').value;
-  const {A,B}=assignUndecided(pool,params,mode);
-  const Ns=[120,160,200,240,300];
-  const per=[];
-  for(const M of METHODS){
-    const res={method:M};
-    if(me.m!=null){
-      const myA=M.score(me.c,me.m,params);
-      res.scoreA=myA;
-      res.rankA=rankIn(myA,A.map(x=>M.score(x.c,x.m,params)));
-      res.fracA=(res.rankA.rank-0.5)/res.rankA.n;
-    }
-    const sim=simulateB(me,B,params,M,1500);
-    let sum=0;for(const v of sim)sum+=v; res.fracB=sum/sim.length;
-    res.rankB={rank:Math.max(1,Math.round(res.fracB*(B.length+1)+0.5)),n:B.length+1};
-    res.pB={};for(const N of Ns){const f=CONFIG.SEATS/N;let k=0;for(const v of sim)if(v<=f)k++;res.pB[N]=k/sim.length;}
-    per.push(res);
-  }
-  return{pool,A,B,params,per,Ns,ms,
-    counts:{A:pool.filter(r=>r.t==='A').length,B:pool.filter(r=>r.t==='B').length,U:pool.filter(r=>r.t==='U').length,M:pool.filter(r=>r.t==='M').length,total:pool.length,withMor:pool.filter(r=>r.m!=null).length}};
-}
-
-/* ======================= RECOMMENDATION =======================*/
-const rangeTxt=(arr)=>{const lo=Math.min(...arr),hi=Math.max(...arr);return Math.abs(hi-lo)<0.02?'':` (טווח בין השיטות: <bdi dir="ltr">${pct(lo)}–${pct(hi)}</bdi>)`;};
-function recommend(me,an){
-  const C=an.per[2]; // שיטה ג׳ – המרכזית, ממנה לוקחים את המספרים להצגה
-  const bullets=[]; let cls='N', title='', conf='';
-  if(me.m==null){
-    cls='B'; title='מכסה ב׳ היא הדרך שלך';
-    bullets.push(`בלי ציון מו"ר אפשר להתמיין רק דרך המבדק והראיון הפנימיים של אריאל, ולכן אין כאן באמת בחירה.`);
-    bullets.push(`לפי הסכם הקוגניטיבי שלך, לפני המיון הפנימי את/ה בערך ב-<strong>${pct(C.fracB)} העליונים</strong> של המועמדים במכסה ב׳ שבסקר${rangeTxt(an.per.map(p=>p.fracB))}. המיון הפנימי שווה 30% ויכול להזיז אותך לכאן או לכאן.`);
-    bullets.push(`הדבר היחיד שבשליטתך עכשיו הוא להתכונן למבדק הממוחשב ולראיון.`);
-    return{cls,title,conf,bullets};
-  }
-  // הצבעה: כל שיטה מצביעה למכסה שבה המקום שלך טוב יותר (הפרש של לפחות 3 נקודות אחוז)
-  const votes=an.per.map(p=>p.fracA<p.fracB-0.03?'A':p.fracB<p.fracA-0.03?'B':'T');
-  const nA=votes.filter(v=>v==='A').length, nB=votes.filter(v=>v==='B').length;
-  const fA=C.fracA, fB=C.fracB;
-  const fAtxt=`${pct(fA)} העליונים`+rangeTxt(an.per.map(p=>p.fracA)), fBtxt=`${pct(fB)} העליונים`+rangeTxt(an.per.map(p=>p.fracB));
-  const capN=x=>x>500?'מעל 500':String(x);
-  const nAdmA=capN(Math.floor(CONFIG.SEATS/fA)), nAdmB=capN(Math.floor(CONFIG.SEATS/fB));
-  const aCog=an.A.length?an.A.reduce((t,x)=>t+x.c,0)/an.A.length:NaN, aMor=an.A.length?an.A.reduce((t,x)=>t+x.m,0)/an.A.length:NaN;
-  const wide=Math.max(...an.per.map(p=>p.fracA))-Math.min(...an.per.map(p=>p.fracA))>0.2||Math.max(...an.per.map(p=>p.fracB))-Math.min(...an.per.map(p=>p.fracB))>0.2;
-  const decision=nA>nB?'A':nB>nA?'B':'T';
-  const agree=Math.max(nA,nB);
-  if(decision==='T'){
-    cls='T'; title='כמעט שקול בין שתי המכסות'; conf='השיטות חלוקות';
-    bullets.push(`במכסה א׳ את/ה בערך ב-<strong>${fAtxt}</strong>, ובמכסה ב׳ ההערכה היא <strong>${fBtxt}</strong>. ${wide?'התוצאה תלויה מאוד בשיטת היישור של אריאל, שאינה ידועה.':'ההפרש קטן מהרעש שבנתונים.'}`);
-    bullets.push(`כשזה שקול, <strong>מכסה א׳ עדיפה למי שרוצה ודאות</strong>: הציון שלך ידוע ולא תלוי ביום מיון אחד. <strong>מכסה ב׳ עדיפה למי שמרגיש/ה חזק/ה בראיון קצר ובמבדק ממוחשב</strong>, או שהמו"ר לא שיקף אותו/ה.`);
-  }else if(decision==='A'){
-    cls='A'; title='עדיף לך להישאר במכסה א׳ עם ציון המו"ר'; conf=`${agree} מתוך 3 שיטות`;
-    bullets.push(`עם ציון המו"ר שלך את/ה ב-<strong>${fAtxt}</strong> של המועמדים במכסה א׳ שבסקר. במכסה ב׳ ההערכה היא רק <strong>${fBtxt}</strong>, כי שם המו"ר שלך "נמחק" ואת/ה מתחיל/ה מחדש מול כולם.`);
-    bullets.push(`במכסה א׳ הכול ידוע מראש: אין סיכון של יום מיון חלש. במכסה ב׳ 30% מהציון נקבעים ב-50 דקות.`);
-    bullets.push(`לפי הנתונים, במכסה א׳ את/ה מתקבל/ת כל עוד עוברים לשלב ב׳ עד כ-<strong>${nAdmA}</strong> מועמדים בסך הכול; במכסה ב׳ רק עד כ-${nAdmB}.`);
-  }else{
-    cls='B'; title='עדיף לך לוותר על המו"ר ולגשת למיון הפנימי (מכסה ב׳)'; conf=`${agree} מתוך 3 שיטות`;
-    bullets.push(me.m<200
-      ?`ציון המו"ר שלך (${me.m}) נמוך מהממוצע הארצי (200), ובמכסה א׳ מתחרים מולך מועמדים עם מו"ר ממוצע של ${f1(aMor)}. שם את/ה ב-<strong>${fAtxt}</strong> בלבד.`
-      :`ציון המו"ר שלך (${me.m}) טוב, אבל במכסה א׳ מתחרים מולך מועמדים עם סכם ממוצע ${f1(aCog)} ומו"ר ממוצע ${f1(aMor)}, ובשיטת השקלול המרכזית הסכם הקוגניטיבי שוקל יותר מהמו"ר. שם את/ה ב-<strong>${fAtxt}</strong> בלבד.`);
-    bullets.push(`במכסה ב׳ אף אחד עוד לא קיבל ציון לא-קוגניטיבי, והקבוצה שם חלשה יותר בממוצע. עם הסכם הקוגניטיבי שלך ההערכה היא שאת/ה ב-<strong>${fBtxt}</strong>.`);
-    bullets.push(`לפי הנתונים, במכסה ב׳ את/ה מתקבל/ת בסיכוי טוב כל עוד עוברים לשלב ב׳ עד כ-<strong>${nAdmB}</strong> מועמדים; במכסה א׳ רק עד כ-${nAdmA}.`);
-    bullets.push(`המחיר: 300 ₪, יום מיון ב-<bdi dir="ltr">7–8.10</bdi>, ואי-ודאות. אם את/ה יודע/ת שאת/ה חלש/ה בראיונות קצרים או במבדקי אישיות ממוחשבים, שקול/י בכל זאת להישאר במכסה א׳.`);
-  }
-  if(agree===2&&decision!=='T'){
-    const odd=an.per[votes.findIndex(v=>v!==decision)].method.name;
-    bullets.push(`שיטה אחת (${odd}) מצביעה אחרת. ${votes[2]!==decision?'זו השיטה המרכזית, ולכן כדאי להתייחס להמלצה בזהירות.':'השיטה המרכזית (ג׳) תומכת בהמלצה.'}`);
-  }
-  if(fA>0.6&&fB>0.6) bullets.push(`<strong>בשתי המכסות המקום שלך בחצי התחתון</strong> של המשיבים לסקר. הקבלה תלויה בכך שיעברו מעט מועמדים לשלב ב׳, או בכך שהמשיבים לסקר חזקים מהמועמדים בכלל (סביר שכך).`);
-  if(me.t==='A'&&cls==='B') bullets.push(`<strong>שים/י לב:</strong> סימנת שאת/ה ניגש/ת במכסה א׳, אבל הנתונים מצביעים על ב׳.`);
-  if(me.t==='B'&&cls==='A') bullets.push(`<strong>שים/י לב:</strong> סימנת שאת/ה ניגש/ת במכסה ב׳, אבל הנתונים מצביעים על א׳.`);
-  if(me.t==='M') bullets.push(`סימנת מתווה מילואים. במתווה זה הקבלה נקבעת בנפרד (סכם 680 ומעלה ומו"ר, ללא בגרות) ואינה חלק מ-80 המקומות, ולכן ההשוואה כאן רלוונטית רק אם תתמיין/י גם במסלול הרגיל.`);
-  return{cls,title,conf,bullets};
 }
 
 /* ======================= UI =======================*/
@@ -493,101 +291,6 @@ function readMe(){
   return{c,m:hasMor.value==='1'?m:null,t:tr.value};
 }
 
-function setBar(id,frac,cutFrac,color){
-  const el=$(id); const bar=el.querySelector('.bar');
-  bar.querySelector('.me').style.insetInlineStart=(frac*100)+'%';
-  bar.querySelector('.cut').style.insetInlineStart=(Math.min(1,cutFrac)*100)+'%';
-  bar.querySelector('.fill').style.width=(Math.min(1,cutFrac)*100)+'%';
-  bar.querySelector('.fill').style.insetInlineStart='0';
-}
-
-let CUT_N=200;
-function render(me,an){
-  const rec=recommend(me,an);
-  const reco=$('reco'); reco.className='reco '+rec.cls;
-  reco.innerHTML=`<div class="k">לפי הנתונים שלך ו-${an.pool.length} משיבים לסקר</div><div class="v">${rec.title}${rec.conf?`<span class="conf">${rec.conf}</span>`:''}</div><ul>${rec.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>`;
-
-  const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
-  const mB=an.per[2].fracB;
-  const cut=CONFIG.SEATS/CUT_N; $('cutN').textContent=CUT_N;
-  if(me.m!=null){
-    const mA=an.per[2].fracA; const rA=an.per[2].rankA;
-    $('posA').classList.remove('hidden');
-    $('posAtxt').textContent=`מקום ${rA.rank} מתוך ${rA.n} (לפי שיטה ג׳) · ${pct(mA)} העליונים`;
-    setBar('posA',mA,cut);
-  }else $('posA').classList.add('hidden');
-  const rB=an.per[2].rankB;
-  $('posBtxt').textContent=`בערך מקום ${rB.rank} מתוך ${rB.n} · ${pct(mB)} העליונים`;
-  setBar('posB',mB,cut);
-
-  // N table
-  const tb=$('nTable').querySelector('tbody'); tb.innerHTML='';
-  for(const N of an.Ns){
-    const f=CONFIG.SEATS/N;
-    const inA=me.m!=null?an.per.filter(p=>p.fracA<=f).length:null;
-    const pB=avg(an.per.map(p=>p.pB[N]));
-    const tdA=me.m==null?'<td class="muted">—</td>':inA===3?'<td class="in">מתקבל/ת</td>':inA===0?'<td class="out">לא מתקבל/ת</td>':`<td class="mid">גבולי (<bdi dir="ltr">${inA}/3</bdi> שיטות)</td>`;
-    const clsB=pB>=0.7?'in':pB<=0.35?'out':'mid';
-    tb.insertAdjacentHTML('beforeend',`<tr data-n="${N}" style="cursor:pointer"><td class="num">${N}</td><td>${pct(f)} מכל מכסה</td>${tdA}<td class="${clsB}">${pct(pB)}</td></tr>`);
-  }
-  tb.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>{CUT_N=+tr.dataset.n;render(me,an);}));
-  $('nNote').textContent=`בסקר: ${an.A.length} במכסה א׳ ו-${an.B.length} במכסה ב׳ (אחרי שיוך ה"לא בטוחים"). לחיצה על שורה מזיזה את קו הקבלה בגרפים למעלה. "מתקבל/ת" במכסה א׳ = המקום שלך בסקר נמצא בתוך האחוז שמתקבל; במכסה ב׳ מוצג הסיכוי מתוך 1,500 סימולציות.`;
-
-  // methods table
-  const mt=$('mTable').querySelector('tbody'); mt.innerHTML='';
-  for(const p of an.per){
-    mt.insertAdjacentHTML('beforeend',`<tr><td>${p.method.name}</td><td class="num">${me.m!=null?`${p.rankA.rank}/${p.rankA.n}`:'—'}</td><td class="num">~${p.rankB.rank}/${p.rankB.n}</td><td class="num">${me.m!=null?f2(p.scoreA):'—'}</td></tr>`);
-  }
-  if(me.m!=null){
-    const p25={...an.params,sd:25}; const sc=METHODS[2].score;
-    const r25=rankIn(sc(me.c,me.m,p25),an.A.map(x=>sc(x.c,x.m,p25)));
-    mt.insertAdjacentHTML('beforeend',`<tr class="muted"><td>בדיקת רגישות: ג׳ עם סטיית תקן 25 (לא נספרת בהמלצה)</td><td class="num">${r25.rank}/${r25.n}</td><td class="num">—</td><td class="num">${f2(sc(me.c,me.m,p25))}</td></tr>`);
-  }
-  $('mNote').textContent=`שיטה ג׳ משתמשת בממוצע ${f1(an.params.mu)} וסטיית תקן ${f1(an.params.sd)} של הסכם הקוגניטיבי בסקר. סטיית תקן קטנה פירושה שכל נקודת סכם שווה הרבה, והמו"ר שווה פחות. סביר שהמשיבים לסקר חזקים מהממוצע ולכן הפיזור האמיתי גדול יותר; שורת הרגישות מראה מה קורה עם 25. הציונים של השיטות נמצאים בסקאלות שונות ואינם ברי השוואה זה לזה, רק המקום בתור חשוב. מתאם מו"ר–מיון פנימי: ${an.params.r}.`;
-
-  $('result').classList.remove('hidden'); $('save').classList.remove('hidden');
-  LAST_RESULT={me,an};
-}
-
-function renderStats(){
-  if(!AUTH_VERIFIED||DATA.source!=='live'){
-    $('stats').replaceChildren();
-    $('dataSrc').textContent='נתוני הסקר ייטענו לאחר אימות ההתחברות בשרת.';
-    $('dataCaveat').classList.add('hidden');
-    return;
-  }
-  const pool=DATA.rows;
-  const ms=meanSd(pool.map(r=>r.c));
-  const mors=pool.filter(r=>r.m!=null).map(r=>r.m).sort((a,b)=>a-b);
-  const med=mors.length?mors[Math.floor(mors.length/2)]:NaN;
-  const cnt=t=>pool.filter(r=>r.t===t).length;
-  $('stats').innerHTML=[
-    [pool.length,'רשומות מזוהות, ללא כפילות בין המקורות'],[cnt('A'),'בחרו מכסה א׳'],[cnt('B'),'בחרו מכסה ב׳'],[cnt('U'),'לא בטוחים'],
-    [isNaN(ms.mu)?'—':f1(ms.mu),'ממוצע סכם קוגניטיבי'],[isNaN(ms.sd)?'—':f1(ms.sd),'סטיית תקן'],[isNaN(med)?'—':med,'חציון מו"ר (למי שיש)'],
-  ].map(([n,t])=>`<div class="stat"><div class="n">${n}</div><div class="t">${t}</div></div>`).join('');
-  $('dataSrc').textContent=`נתונים חיים מהמאגר המאוחד, עודכנו ${DATA.updated}. הרשומה של החשבון הנוכחי אינה נספרת כמתחרה נוסף.`;
-  const n=x=>Number.isFinite(Number(x))?Math.max(0,Math.floor(Number(x))):0;
-  $('dataCaveat').textContent=`${n(DATA.counts.historical)} תשובות היסטוריות ללא מזהה נשמרו אך אינן נכללות בחישוב. ${n(DATA.counts.unresolved)} תשובות נוספות ממתינות להתאמת זהות, ו-${n(DATA.counts.invalid)} רשומות לא תקינות אינן נכללות. ${pool.length<20?'המדגם המזוהה כרגע קטן; אין לפרש דירוג כהסתברות קבלה אמיתית.':'זהו סקר התנדבותי, לא מדגם מייצג.'}`;
-  $('dataCaveat').classList.remove('hidden');
-}
-function renderRecommendation(me){
-  if(!AUTH_VERIFIED)return;
-  const pool=mergedPool();
-  const ms=meanSd(pool.filter(x=>x.t!=='M').map(x=>x.c));
-  const insufficient=!Number.isFinite(ms.sd)||ms.sd<=0;
-  const an=insufficient?null:analyze(me);
-  if(insufficient||!an.A.length||!an.B.length){
-    LAST_RESULT=null;
-    $('result').classList.remove('hidden');
-    $('resultDetails').classList.add('hidden');
-    $('reco').className='reco N';
-    $('reco').textContent='הציונים נשמרו. עדיין אין מספיק נתונים מזוהים בני־השוואה בשתי המכסות כדי לתת המלצה מבוססת. תשובות אנונימיות ישנות אינן מתווספות למדגם באופן שעלול לספור את אותו אדם פעמיים.';
-    return;
-  }
-  $('resultDetails').classList.remove('hidden');
-  render(me,an);
-}
-
 /* ======================= GOOGLE SIGN-IN & SAVE =======================*/
 function decodeJwt(t){try{return JSON.parse(decodeURIComponent(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}catch(e){return{};}}
 function syncAuthUi(){
@@ -597,11 +300,12 @@ function syncAuthUi(){
   $('go').textContent=SAVING?'שומר ומחשב…':'חשב ושמור את הציונים';
   $('submit').disabled=!signedIn||SAVING;
   $('signOut').disabled=SAVING;
+  if($('refreshData'))$('refreshData').disabled=!signedIn||SAVING||REFRESHING;
   $('signOut').classList.toggle('hidden',!signedIn&&!VERIFYING);
   $('who').classList.toggle('hidden',!signedIn);
   $('gsiBtn').classList.toggle('hidden',signedIn||VERIFYING);
   $('inputGate').textContent=signedIn?'הציונים יישמרו אוטומטית עם החישוב. שינוי נוסף יעדכן את אותה רשומה.':
-    VERIFYING?'מאמת את החשבון וטוען נתונים מהשרת…':'יש להתחבר עם Google לפני הזנת ציונים וקבלת המלצה.';
+    VERIFYING?'מאמת את החשבון וטוען נתונים מהשרת…':'יש להתחבר עם Google לפני הזנת ציונים וניתוח תרחישים.';
 }
 function resetScores(){
   ['cog','mor','bag','psy'].forEach(id=>{$(id).value='';$(id).classList.remove('bad');});
@@ -666,6 +370,11 @@ async function receiveCredential(resp){
     Math.min(Number(p.exp)*1000-Date.now(),2147483647));
 }
 function initAuth(){
+  if(!['naaman6.github.io','127.0.0.1','localhost'].includes(location.hostname)){
+    $('authStatus').textContent='זוהי תצוגה מקדימה בלבד. הזדהות Google ושמירה זמינות באתר המקורי, שהוגדר ככתובת המורשית.';
+    $('gsiBtn').innerHTML='<a href="https://naaman6.github.io/sechem-calculator/" target="_blank" rel="noopener">פתיחת המחשבון באתר המקורי</a>';
+    return;
+  }
   if(AUTH_LOADING||ID_TOKEN||VERIFYING)return;
   if(!CONFIG.CLIENT_ID||!CONFIG.API_URL){
     $('authStatus').textContent='ההתחברות לשרת טרם הוגדרה. החישוב אינו זמין כרגע.';
@@ -736,8 +445,6 @@ $('useCog').addEventListener('click',()=>{
   $('helperErr').textContent=''; $('cog').value=((6.666*b+p)/2).toFixed(2);
 });
 $('go').addEventListener('click',submitMe);
-['rCorr','muOv','sdOv'].forEach(id=>$(id).addEventListener('input',()=>{$('rCorrV').textContent=$('rCorr').value; if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
-document.querySelectorAll('input[name=undec]').forEach(r=>r.addEventListener('change',()=>{if(LAST_RESULT)render(LAST_RESULT.me,analyze(LAST_RESULT.me));}));
 $('submit').addEventListener('click',submitMe);
 $('authRetry').addEventListener('click',initAuth);
 $('signOut').addEventListener('click',()=>{if(!SAVING)clearAuth();});
@@ -749,9 +456,8 @@ $('inputFields').addEventListener('input',()=>{
   $('submit').classList.add('hidden');
 });
 
-syncAuthUi();
-initAuth();
-renderStats();
 </script>
+<script src="scenario-model.js?v=4"></script>
+<script src="scenario-ui.js?v=4"></script>
 </body>
 </html>

@@ -140,12 +140,20 @@ function readForms_(ss) {
   if (Object.values(pos).some(x => x < 0)) fail_('SCHEMA', 'מבנה הסקר השתנה. לא בוצעה שמירה.');
   const identified = new Map();
   let historical = 0, invalid = 0;
+  const survey = { answered: 0, tracks: { A: 0, B: 0, U: 0, M: 0 },
+    historicalRows: [], validRows: 0, identifiedResponses: 0 };
   values.slice(1).forEach((row, index) => {
     if (row.every(x => x === '')) return;
+    if (String(row[pos.track] || '').trim()) {
+      survey.answered++;
+      survey.tracks[trackCode_(String(row[pos.track]))]++;
+    }
     const score = scoresFromRow_(row[pos.cog], row[pos.mor], trackCode_(String(row[pos.track])));
     if (!score) { invalid++; return; }
+    survey.validRows++;
     const email = normalizeEmail_(row[pos.email]);
-    if (!email) { historical++; return; }
+    if (!email) { historical++; survey.historicalRows.push(score); return; }
+    survey.identifiedResponses++;
     const emailKey = hash_('email|' + email);
     const timestamp = new Date(row[pos.date]).getTime() || 0;
     const form = { ...score, emailKey, timestamp, order: index,
@@ -154,7 +162,7 @@ function readForms_(ss) {
     const previous = identified.get(emailKey);
     if (!previous || timestamp >= previous.timestamp) identified.set(emailKey, form);
   });
-  return { identified, historical, invalid };
+  return { identified, historical, invalid, survey };
 }
 function parseAliases_(cell) {
   try {
@@ -256,7 +264,7 @@ function mergeData_(forms, calcs, identity) {
     if (!form.gmail && !self) { unresolved++; return; }
     rows.push(publicScore_(form, self));
   });
-  return { rows, counts: { identified: rows.length, historical: forms.historical,
+  return { rows, survey: forms.survey, counts: { identified: rows.length, historical: forms.historical,
     unresolved, invalid: forms.invalid },
     identityNotice: identity.authoritative ? '' :
       'החשבון מזוהה לפי Google, אך התאמה אוטומטית לטופס לפי כתובת מייל חיצונית אינה זמינה ללא אימות נוסף.' };
