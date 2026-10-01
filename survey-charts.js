@@ -1,7 +1,7 @@
 'use strict';
 // Only aggregate original Google Forms counts. Never substitute the merged
 // calculator population for a chart labelled "form responses".
-const SurveyCharts=(()=>{
+(()=>{
   const labels={A:'מכסה א׳ · מו״ר',B:'מכסה ב׳ · מיון פנימי',M:'מתווה מילואים',U:'לא בטוח/ה'};
   const colors={A:'#4267b2',B:'#c64d45',M:'#d59c27',U:'#429766'};
   const validCount=x=>Number.isSafeInteger(x)&&x>=0;
@@ -48,7 +48,8 @@ const SurveyCharts=(()=>{
     const legend=tracks.map(({k,n:count})=>`<li><i style="background:${colors[k]}" aria-hidden="true"></i><span>${labels[k]}</span><b>${count} · ${(n?100*count/n:0).toLocaleString('he-IL',{maximumFractionDigits:1})}%</b></li>`).join('');
     root.innerHTML=`<div class="survey-chart-group"><h3>התפלגות התשובות, כמו בסקר</h3><p class="small muted">${validCount(s.totalResponses)?`${s.totalResponses} תשובות בסך הכול. `:''}לכל שאלה מספר תשובות משלה; אלו תשובות טופס ולא ספירת אנשים ייחודיים.</p><article class="survey-chart"><h3>באיזה מסלול את/ה מתמיין/ת?</h3><p class="small muted">${n} תשובות לשאלה</p><div class="survey-pie-layout"><div class="survey-donut" role="img" aria-label="התפלגות מסלולים; הפירוט ברשימה הסמוכה" style="background:${n?'conic-gradient('+gradient+')':'var(--surface-2)'}"><div><strong>${n}</strong><span>תשובות</span></div></div><ul class="survey-key">${legend}</ul></div></article>${s.distributions?frequency('ציון סכם קוגניטיבי',s.distributions.cog)+frequency('ציון מו״ר / מרק״ם',s.distributions.mor,true):'<p class="note">תרשימי הציונים יופיעו לאחר עדכון השרת. לא מוצגים במקומם נתונים מאוכלוסייה אחרת.</p>'}<p class="small muted">התרשימים משקפים גם ערכים חריגים כפי שנענו; החישוב משתמש רק בציונים תקינים. הערות חופשיות ופרטים מזהים אינם מוצגים. <a href="https://docs.google.com/forms/d/1zJFk-Yvxe-lA_lkIiRISQSKJZheKpd_RWLz0ZZGb7bU/viewanalytics" target="_blank" rel="noopener noreferrer">פתיחת סיכום Google Forms</a></p></div>`;
   }
-  const style=document.createElement('style');
+  const style=document.getElementById('survey-chart-styles')||document.createElement('style');
+  style.id='survey-chart-styles';
   style.textContent=`
   .survey-chart-group{margin-block:24px}.survey-chart{border:1px solid var(--border);border-radius:12px;padding:20px;margin-block:16px;overflow:hidden}
   .survey-chart h3{font-size:1rem;margin:0 0 6px}.survey-pie-layout{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-block:20px}
@@ -69,5 +70,9 @@ const SurveyCharts=(()=>{
   @media(max-width:500px){.survey-chart{padding:14px}.survey-pie-layout{justify-content:center;gap:16px}.survey-key{min-width:0;flex-basis:100%}.survey-key li{font-size:.78rem}}
   `;
   document.head.appendChild(style);
-  return {render,entries,grouped};
+  // Reloadable in an already-open v5.2 page: update its existing object instead
+  // of redeclaring its global const. No authentication or score state changes.
+  const api={render,entries,grouped,version:'5.3.1'};
+  if(typeof SurveyCharts!=='undefined')Object.assign(SurveyCharts,api);
+  else globalThis.SurveyCharts=api;
 })();
